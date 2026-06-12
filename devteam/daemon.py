@@ -45,8 +45,27 @@ def _actionable(p: Project) -> bool:
 
 
 def tick() -> TickResult:
-    """Run ONE phase step for the first actionable project (1 project at a time)."""
-    for p in _candidates():
+    """One daemon step: (1) apply human interventions from Discord threads for
+    ALL projects (even paused ones - that's how they get resumed), then
+    (2) run ONE phase step for the first actionable project."""
+    from .discord_listener import check_interventions, listener_available
+
+    candidates = _candidates()
+
+    if listener_available():
+        for p in candidates:
+            try:
+                for action in check_interventions(p):
+                    print(f"[daemon] intervention: {action}")
+            except Exception as e:  # noqa: BLE001 - listener must not kill the loop
+                print(f"[daemon] listener error on {p.name}: {e}")
+
+    for p in candidates:
+        # reload: an intervention may have just paused/approved/resumed it
+        try:
+            p = Project.load(p.path)
+        except Exception:  # noqa: BLE001
+            continue
         if not _actionable(p):
             continue
         out = run_phase(p)

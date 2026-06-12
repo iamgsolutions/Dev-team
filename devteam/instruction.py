@@ -42,6 +42,8 @@ class Instruction:
     gates: list[str] = field(default_factory=list)
     # CIERRE
     memory_updates: list[str] = field(default_factory=list)  # "file: what to record"
+    # CONOCIMIENTO (optional 5th block: role skill pack - senior craft injected)
+    skills_pack: str = ""
 
     def build(self) -> str:
         missing = []
@@ -76,6 +78,10 @@ class Instruction:
         if self.gates:
             lines.append("Debe pasar: " + ", ".join(self.gates) + ".")
         lines.append("")
+
+        if self.skills_pack:
+            lines += ["== CONOCIMIENTO DEL ROL (aplícalo, es tu estándar de calidad) ==",
+                      self.skills_pack, ""]
 
         lines += ["== CIERRE (OBLIGATORIO antes de terminar) ==", "Antes de cerrar, actualiza:"]
         lines += [f"  - {m}" for m in self.memory_updates]

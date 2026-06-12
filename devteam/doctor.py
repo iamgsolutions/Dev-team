@@ -64,6 +64,15 @@ def run_doctor() -> list[Check]:
     rc, out = _run([str(config.HERMES_EXE), "gateway", "status"], timeout=30)
     checks.append(Check("hermes:gateway", rc == 0 and "running" in out.lower(), out[:120]))
 
+    # 4b. Discord listener (bot token reachable for thread interventions)
+    try:
+        from .discord_listener import listener_available
+        ok = listener_available()
+        checks.append(Check("discord:listener", ok,
+                            "bot token disponible" if ok else "DISCORD_BOT_TOKEN no encontrado en .env de Hermes"))
+    except Exception as e:  # noqa: BLE001
+        checks.append(Check("discord:listener", False, str(e)[:120]))
+
     # 5. Engine state integrity
     try:
         from .state import registry_load

@@ -60,33 +60,36 @@ BRAIN_CODEX = "codex"
 BRAIN_OPENCODE = "opencode"
 
 # Default model per brain. OpenCode free-first cascade lives in router/brains.
+# Model IDs verified against `opencode models` output on 2026-06-12.
+# NOTE: coding agents need TOOL-USE capable models; the opencode/*-free models
+# are curated by the OpenCode gateway for agent work (tool support included).
 DEFAULT_MODELS = {
     BRAIN_CLAUDE: None,  # claude CLI uses its own configured default
     BRAIN_CODEX: None,   # codex CLI uses its own configured default
-    BRAIN_OPENCODE: "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+    BRAIN_OPENCODE: "opencode/deepseek-v4-flash-free",
 }
 
 OPENCODE_FREE_MODELS = [
-    "openrouter/meta-llama/llama-3.3-70b-instruct:free",
-    "openrouter/nousresearch/hermes-3-llama-3.1-405b:free",
-    "openrouter/google/gemma-4-26b-a4b-it:free",
+    "opencode/deepseek-v4-flash-free",
+    "opencode/north-mini-code-free",
+    "opencode/nemotron-3-ultra-free",
 ]
 OPENCODE_CHEAP_MODELS = [
-    "openrouter/deepseek/deepseek-chat",      # strong & cheap
-    "openrouter/qwen/qwen-2.5-coder-32b-instruct",
-    "openrouter/google/gemini-2.0-flash-001",
+    "openrouter/deepseek/deepseek-v4-flash",
+    "openrouter/deepseek/deepseek-chat-v3.1",
+    "openrouter/google/gemini-2.5-flash",
 ]
 
 # USD per 1M tokens (input, output). Approximate, for estimation only.
 MODEL_PRICING: dict[str, tuple[float, float]] = {
-    # free tier
-    "openrouter/meta-llama/llama-3.3-70b-instruct:free": (0.0, 0.0),
-    "openrouter/nousresearch/hermes-3-llama-3.1-405b:free": (0.0, 0.0),
-    "openrouter/google/gemma-4-26b-a4b-it:free": (0.0, 0.0),
+    # free tier (opencode gateway)
+    "opencode/deepseek-v4-flash-free": (0.0, 0.0),
+    "opencode/north-mini-code-free": (0.0, 0.0),
+    "opencode/nemotron-3-ultra-free": (0.0, 0.0),
     # cheap tier
-    "openrouter/deepseek/deepseek-chat": (0.30, 1.20),
-    "openrouter/qwen/qwen-2.5-coder-32b-instruct": (0.20, 0.80),
-    "openrouter/google/gemini-2.0-flash-001": (0.10, 0.40),
+    "openrouter/deepseek/deepseek-v4-flash": (0.30, 1.20),
+    "openrouter/deepseek/deepseek-chat-v3.1": (0.30, 1.20),
+    "openrouter/google/gemini-2.5-flash": (0.30, 2.50),
     # premium (when CLIs don't self-report cost)
     "claude-default": (3.00, 15.00),   # sonnet-class assumption
     "codex-default": (2.00, 8.00),     # gpt-5-class assumption (verify)

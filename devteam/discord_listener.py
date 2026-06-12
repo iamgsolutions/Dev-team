@@ -37,15 +37,23 @@ def _load_bot_token() -> str | None:
     global _token_cache
     if _token_cache:
         return _token_cache
-    env_path = config.HERMES_EXE.parents[2] / ".env"   # ...\hermes\.env
-    try:
-        for line in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
-            m = re.match(r"\s*DISCORD_BOT_TOKEN\s*=\s*(.+?)\s*$", line)
-            if m:
-                _token_cache = m.group(1).strip().strip('"').strip("'")
-                return _token_cache
-    except OSError:
-        pass
+    import os
+    candidates = [
+        Path(p) for p in [os.environ.get("DEVTEAM_HERMES_ENV", "")] if p
+    ]
+    # hermes.exe = <hermes_home>\hermes-agent\venv\Scripts\hermes.exe -> home is parents[3]
+    if len(config.HERMES_EXE.parents) >= 4:
+        candidates.append(config.HERMES_EXE.parents[3] / ".env")
+    candidates.append(Path(os.environ.get("USERPROFILE", "")) / "AppData" / "Local" / "hermes" / ".env")
+    for env_path in candidates:
+        try:
+            for line in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+                m = re.match(r"\s*DISCORD_BOT_TOKEN\s*=\s*(.+?)\s*$", line)
+                if m:
+                    _token_cache = m.group(1).strip().strip('"').strip("'")
+                    return _token_cache
+        except OSError:
+            continue
     return None
 
 

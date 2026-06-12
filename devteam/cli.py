@@ -79,8 +79,29 @@ def cmd_run_task(args) -> int:
     return 0 if res.status == "ok" else 1
 
 
+def cmd_run_phase(args) -> int:
+    """Execute the current phase's macro-task (M4 sequential pipeline)."""
+    from .pipeline import run_phase
+    p = registry_get(args.name)
+    out = run_phase(p)
+    print(f"phase={out.phase} advanced_to={out.advanced_to} "
+          f"waiting_human={out.waiting_human!r} note={out.note!r}")
+    if out.result:
+        print(f"task: status={out.result.status} brain={out.result.brain} "
+              f"model={out.result.model} cost=${out.result.cost_usd:.4f}")
+    return 0 if (out.advanced_to or out.waiting_human) else 1
+
+
+def cmd_approve(args) -> int:
+    """Human approves the pending checkpoint (PRD / architecture / delivery)."""
+    from .pipeline import approve
+    p = registry_get(args.name)
+    print(approve(p))
+    return 0
+
+
 def cmd_daemon(args) -> int:
-    print("daemon: not implemented yet (M4 / Fase 2). See build/03-build-roadmap.md")
+    print("daemon: not implemented yet (M4b). See build/03-build-roadmap.md")
     return 2
 
 
@@ -116,6 +137,14 @@ def main(argv=None) -> int:
     p.add_argument("--critical", action="store_true")
     p.add_argument("--timeout", type=int, default=1800)
     p.set_defaults(fn=cmd_run_task)
+
+    p = sub.add_parser("run-phase", help="execute the current phase macro-task")
+    p.add_argument("name")
+    p.set_defaults(fn=cmd_run_phase)
+
+    p = sub.add_parser("approve", help="approve pending human checkpoint")
+    p.add_argument("name")
+    p.set_defaults(fn=cmd_approve)
 
     p = sub.add_parser("daemon", help="24/7 loop (Fase 2)")
     p.set_defaults(fn=cmd_daemon)

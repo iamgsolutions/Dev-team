@@ -57,13 +57,30 @@ def run_phase(project: Project) -> PhaseOutcome:
         expected_output=spec.expected_output,
     )
 
+    if result.status == "deferred":
+        # Premium brains resting (subscription guardian) - NOT an error.
+        # The daemon retries on a later batch; no human action needed.
+        return PhaseOutcome(phase, result, None, None,
+                            "aplazada: cerebros premium descansando (ración/límite); se reintentará en la siguiente tanda")
+
     if result.status != "ok":
         blocker(project.discord_channel,
                 f"Proyecto {project.name} · fase {phase}: tarea fallida ({result.status}). "
                 f"Cerebro {result.brain}/{result.model}.")
         return PhaseOutcome(phase, result, None, None, f"tarea fallida: {result.status}")
 
-    # merge the phase branch into main (M4 v1: gates/audit arrive in M5)
+    # QUALITY GATES before merge (spec R5: nada avanza sin pasar gates)
+    if result.worktree:
+        from .gates import run_gates
+        from pathlib import Path as _P
+        report = run_gates(_P(result.worktree))
+        if not report.passed:
+            blocker(project.discord_channel,
+                    f"Proyecto {project.name} · fase {phase}: GATES fallidos — {report.summary()}. "
+                    f"El trabajo queda en la rama {result.branch} sin mergear.")
+            return PhaseOutcome(phase, result, None, None, f"gates fallidos: {report.summary()}")
+
+    # merge the phase branch into main (gates passed)
     if result.branch:
         try:
             worktree.merge_branch(project.path, result.branch,

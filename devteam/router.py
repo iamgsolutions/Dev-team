@@ -21,10 +21,12 @@ DESIGN_ROLES = {"pm", "architect"}
 EXEC_ROLES = {"backend", "frontend", "qa"}
 AUDIT_ROLES = {"review", "audit"}
 
+BRAIN_DEFER = "defer"  # premium needed but resting -> task waits for the next batch window
+
 
 @dataclass
 class Route:
-    brain: str                 # claude | codex | opencode
+    brain: str                 # claude | codex | opencode | defer
     model: str | None          # explicit model for opencode; None = CLI default
     justification: str
 
@@ -35,7 +37,12 @@ def route(
     budget_remaining_usd: float = 999.0,
     author_brain: str | None = None,
     free_tier_exhausted: bool = False,
+    claude_available: bool = True,
+    codex_available: bool = True,
 ) -> Route:
+    """Pick a brain. Subscription guardian (claude/codex availability) feeds in
+    here: premium work without an available premium brain DEFERS instead of
+    silently degrading (human's batching policy - quality over speed)."""
     role = role.lower()
 
     # Audit: must differ from author (diversity principle).
@@ -44,26 +51,29 @@ def route(
             return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted),
                          "audit: diverse brain (author was codex)")
         if author_brain == config.BRAIN_CLAUDE:
-            return Route(config.BRAIN_CODEX, None, "audit: diverse brain (author was claude)")
-        # author was opencode (or unknown): prefer codex if affordable, else another oc model
-        if budget_remaining_usd > 1.0:
+            if codex_available:
+                return Route(config.BRAIN_CODEX, None, "audit: diverse brain (author was claude)")
+            return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted),
+                         "audit: codex resting -> diverse cheap model")
+        # author was opencode (or unknown)
+        if codex_available and budget_remaining_usd > 1.0:
             return Route(config.BRAIN_CODEX, None, "audit: diverse brain (author was opencode)")
         return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted),
-                     "audit: diverse-ish (budget too low for premium)")
+                     "audit: diverse-ish cheap model (codex resting or budget low)")
 
-    # Critical work goes to the premium designer brain (human's explicit rule:
-    # "habrá veces que Hermes decida que Claude desarrolle esa parte").
-    if critical:
-        if budget_remaining_usd > 2.0:
-            return Route(config.BRAIN_CLAUDE, None, "critical task -> premium brain")
-        return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted=True),
-                     "critical but budget nearly exhausted -> best cheap model")
-
-    if role in DESIGN_ROLES:
-        if budget_remaining_usd > 2.0:
-            return Route(config.BRAIN_CLAUDE, None, f"{role}: design role -> premium brain")
-        return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted=True),
-                     f"{role}: design role but budget low -> cheap-strong model")
+    # Critical / design work wants a premium brain. If both premium brains are
+    # resting (ration spent or rate-limited), DEFER - the daemon retries later.
+    if critical or role in DESIGN_ROLES:
+        if budget_remaining_usd <= 2.0:
+            return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted=True),
+                         f"{role}: premium-grade task but project budget nearly exhausted -> best cheap model")
+        if claude_available:
+            return Route(config.BRAIN_CLAUDE, None, f"{role}: premium-grade task -> claude")
+        if codex_available:
+            return Route(config.BRAIN_CODEX, None,
+                         f"{role}: claude resting -> codex (second premium brain)")
+        return Route(BRAIN_DEFER, None,
+                     f"{role}: premium-grade task, both premium brains resting -> defer to next batch")
 
     # Execution (default): free first, escalate to cheap when free is exhausted.
     return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted),

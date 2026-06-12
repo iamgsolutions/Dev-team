@@ -100,6 +100,20 @@ def cmd_approve(args) -> int:
     return 0
 
 
+def cmd_subs(args) -> int:
+    """Subscription guardian status / tuning."""
+    from . import subscription
+    if args.set:
+        brain, calls = args.set
+        subscription.set_daily_budget(brain, int(calls))
+        print(f"{brain}: daily budget set to {calls} calls")
+    if args.wake:
+        subscription.clear_cooldown(args.wake)
+        print(f"{args.wake}: cooldown cleared")
+    print(json.dumps(subscription.status(), indent=2))
+    return 0
+
+
 def cmd_tick(args) -> int:
     """Run a single daemon step (useful for cron/testing)."""
     from .daemon import tick
@@ -154,6 +168,12 @@ def main(argv=None) -> int:
     p = sub.add_parser("approve", help="approve pending human checkpoint")
     p.add_argument("name")
     p.set_defaults(fn=cmd_approve)
+
+    p = sub.add_parser("subs", help="subscription guardian: show or tune premium rations")
+    p.add_argument("--set", nargs=2, metavar=("BRAIN", "CALLS"),
+                   help="set daily call budget, e.g. --set claude 10")
+    p.add_argument("--wake", metavar="BRAIN", help="clear cooldown for a brain")
+    p.set_defaults(fn=cmd_subs)
 
     p = sub.add_parser("tick", help="run one daemon step")
     p.set_defaults(fn=cmd_tick)

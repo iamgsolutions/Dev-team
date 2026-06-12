@@ -25,13 +25,14 @@ from .state import Project
 
 @dataclass
 class TaskResult:
-    status: str            # ok | error | timeout | rate_limited | handoff_violated | budget_paused
+    status: str            # ok | error | timeout | deferred | handoff_violated | budget_paused
     brain: str
     model: str
     cost_usd: float
     output: str
     branch: str | None
     justification: str
+    worktree: str | None = None   # path of the task worktree (for gates/audit)
 
 
 def execute_task(
@@ -49,12 +50,22 @@ def execute_task(
     if project.paused:
         return TaskResult("budget_paused", "", "", 0.0, "project is paused", None, "paused")
 
+    from . import subscription
+
     rt: Route = route(
         role=role,
         critical=critical,
         budget_remaining_usd=budget.remaining(project),
         author_brain=author_brain,
+        claude_available=subscription.available(config.BRAIN_CLAUDE),
+        codex_available=subscription.available(config.BRAIN_CODEX),
     )
+    if rt.brain == "defer":
+        # Premium ration spent / cooling down -> task waits for the next batch
+        # window (human's policy: better batched than degraded or drained).
+        return TaskResult("deferred", "", "", 0.0,
+                          "premium brains resting; task will retry on a later batch",
+                          None, rt.justification)
 
     state_summary = read_state(project.path)
     current_state = (state_summary.split("## Estado actual", 1)[-1].split("##", 1)[0].strip()
@@ -81,6 +92,14 @@ def execute_task(
     try:
         before = snapshot_mtimes(project.path)
         result = _invoke(rt, prompt, wt_path, timeout_s)
+        if rt.brain in (config.BRAIN_CLAUDE, config.BRAIN_CODEX):
+            subscription.record_call(rt.brain)
+            if result.status == "rate_limited":
+                # Rest the brain and defer - the daemon retries in a later batch.
+                subscription.report_rate_limit(rt.brain)
+                return TaskResult("deferred", rt.brain, result.model, 0.0,
+                                  "provider reported a usage limit; brain resting, task deferred",
+                                  branch, rt.justification)
 
         # memory handoff enforcement (one retry with explicit warning)
         wt_before = snapshot_mtimes(wt_path)
@@ -116,7 +135,7 @@ def execute_task(
             worktree.commit_all(wt_path, f"feat({role}): {worktree.slugify(task)[:40]}")
 
         return TaskResult(result.status, rt.brain, result.model, result.cost_usd,
-                          result.output, branch, rt.justification)
+                          result.output, branch, rt.justification, str(wt_path))
     finally:
         # worktree stays for inspection/merge; pipeline removes it after merge
         pass

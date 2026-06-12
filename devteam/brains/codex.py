@@ -15,9 +15,12 @@ from . import BrainResult, run_cli, estimate_fallback_cost
 
 def invoke(prompt: str, cwd: Path, timeout_s: int = 1800, model: str | None = None) -> BrainResult:
     # Prompt via STDIN ("-" placeholder): cmd.exe wrappers mangle multiline args.
-    args = ["codex", "exec", "--json", "-"]
+    # --skip-git-repo-check: the engine controls the cwd (always an isolated
+    # worktree), so codex's own trusted-dir check is redundant here.
+    args = ["codex", "exec", "--json", "--skip-git-repo-check"]
     if model:
-        args = ["codex", "exec", "--json", "--model", model, "-"]
+        args += ["--model", model]
+    args.append("-")
     rc, out, err, dur = run_cli(args, cwd, timeout_s, input_text=prompt)
 
     if rc == -1:
@@ -57,4 +60,7 @@ def invoke(prompt: str, cwd: Path, timeout_s: int = 1800, model: str | None = No
         cost = estimate_fallback_cost("codex-default", prompt, text)
 
     status = "ok" if rc == 0 else "error"
+    from ..subscription import looks_rate_limited
+    if status != "ok" and looks_rate_limited(text + " " + err):
+        status = "rate_limited"
     return BrainResult(status, text, cost, model or "codex-default", dur, {"events": len(events)})

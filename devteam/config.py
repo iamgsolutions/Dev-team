@@ -64,7 +64,9 @@ BRAIN_OPENCODE = "opencode"
 # NOTE: coding agents need TOOL-USE capable models; the opencode/*-free models
 # are curated by the OpenCode gateway for agent work (tool support included).
 DEFAULT_MODELS = {
-    BRAIN_CLAUDE: None,  # claude CLI uses its own configured default
+    # Automation uses SONNET, not opus: rations the Max subscription (the
+    # humans use it interactively too) while staying premium-grade for design.
+    BRAIN_CLAUDE: "sonnet",
     BRAIN_CODEX: None,   # codex CLI uses its own configured default
     BRAIN_OPENCODE: "opencode/deepseek-v4-flash-free",
 }

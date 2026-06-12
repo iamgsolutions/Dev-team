@@ -13,6 +13,11 @@ from . import BrainResult, run_cli, estimate_fallback_cost
 
 
 def invoke(prompt: str, cwd: Path, timeout_s: int = 1800, model: str | None = None) -> BrainResult:
+    from .. import config
+
+    # Default to the ration-friendly automation model (sonnet) unless the
+    # caller explicitly escalates (e.g. opus for a hard architecture task).
+    model = model or config.DEFAULT_MODELS[config.BRAIN_CLAUDE]
     # Prompt goes via STDIN: npm .cmd wrappers route args through cmd.exe,
     # which mangles multiline arguments (verified 2026-06-12). `claude -p`
     # reads the prompt from stdin when no positional prompt is given.
@@ -36,4 +41,9 @@ def invoke(prompt: str, cwd: Path, timeout_s: int = 1800, model: str | None = No
     if cost is None:
         cost = estimate_fallback_cost("claude-default", prompt, text)
     status = "ok" if rc == 0 else "error"
+    # Subscription guardian: surface provider limits so the executor can rest
+    # this brain and defer the task to the next batch window.
+    from ..subscription import looks_rate_limited
+    if status != "ok" and looks_rate_limited(text + " " + err):
+        status = "rate_limited"
     return BrainResult(status, text, float(cost), model or "claude-default", dur, raw)

@@ -38,13 +38,16 @@ def ensure_repo(path: Path) -> None:
 
 
 def create(repo: Path, task_name: str) -> tuple[Path, str]:
-    """Create worktree+branch for a task. Returns (worktree_path, branch)."""
+    """Create (or reuse) worktree+branch for a task. Idempotent: batched
+    retries after a deferred/rate-limited attempt land in the same worktree."""
     branch = f"task/{slugify(task_name)}"
     wt_root = repo.parent / f"{repo.name}-worktrees"
     wt_root.mkdir(parents=True, exist_ok=True)
     wt_path = wt_root / slugify(task_name)
     if wt_path.exists():
-        raise GitError(f"worktree already exists: {wt_path}")
+        if (wt_path / ".git").exists():
+            return wt_path, branch          # reuse existing task worktree
+        raise GitError(f"path exists but is not a worktree: {wt_path}")
     _git(repo, "worktree", "add", "-b", branch, str(wt_path))
     return wt_path, branch
 

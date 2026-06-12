@@ -1,0 +1,22 @@
+[project]
+name = "devteam"
+version = "0.1.0"
+description = "MG Solutions 24/7 AI development team engine - orchestrates coding agents (Claude Code, Codex, OpenCode) under Hermes direction"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+devteam = "devteam.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["devteam*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

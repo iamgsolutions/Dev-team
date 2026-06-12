@@ -89,7 +89,11 @@ def _opencode_model(free_tier_exhausted: bool) -> str:
 
 
 def fallback_chain(current_model: str | None) -> list[str]:
-    """Models to try (in order) when the current one fails / rate-limits."""
-    chain = [m for m in config.OPENCODE_FREE_MODELS if m != current_model]
-    chain += [m for m in config.OPENCODE_CHEAP_MODELS if m != current_model]
+    """Models to try (in order) when the current one fails / rate-limits.
+    Benched models (scorecard: too many failures) are excluded - a model the
+    director sent to the bench never re-enters silently."""
+    from .reflective import benched_models
+    benched = set(benched_models())
+    chain = [m for m in config.OPENCODE_FREE_MODELS if m != current_model and m not in benched]
+    chain += [m for m in config.OPENCODE_CHEAP_MODELS if m != current_model and m not in benched]
     return chain

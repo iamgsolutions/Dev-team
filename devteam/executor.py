@@ -133,7 +133,12 @@ def execute_task(
                               result.output, branch, rt.justification)
 
         if result.status == "ok":
-            worktree.commit_all(wt_path, f"feat({role}): {worktree.slugify(task)[:40]}")
+            worktree.commit_all(wt_path, f"feat({role}): {worktree.slugify(task)[:40]}",
+                                model=result.model, role=role)
+
+        # model accountability: every outcome feeds the scorecard (S14)
+        from . import reflective
+        reflective.record(result.model, rt.brain, result.status, note=f"{role}: {task[:50]}")
 
         return TaskResult(result.status, rt.brain, result.model, result.cost_usd,
                           result.output, branch, rt.justification, str(wt_path))

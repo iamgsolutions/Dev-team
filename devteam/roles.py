@@ -50,7 +50,9 @@ def architect_task(project: Project) -> PhaseTask:
     return PhaseTask(
         role="architect",
         task=(
-            "Como Architect: lee ./docs/PRD.md y decide la arquitectura con best practices. "
+            "Como Architect: lee ./docs/PRD.md y ./docs/STANDARDS.md (los estándares del "
+            "equipo: estructura, reglas de código, seguridad, tests — son OBLIGATORIOS, "
+            "no inventes otra organización). Decide la arquitectura con best practices. "
             "Produce: ./docs/architecture.md (stack elegido y por qué, estructura de carpetas, "
             "decisiones tipo ADR), ./docs/api-contract.md (TODOS los endpoints: ruta, método, "
             "request/response JSON, códigos de error) y ./docs/data-model.md (entidades, campos, "
@@ -73,7 +75,8 @@ def backend_task(project: Project) -> PhaseTask:
         role="backend",
         task=(
             "Como Backend Engineer: implementa EXACTAMENTE ./docs/api-contract.md siguiendo "
-            "./docs/architecture.md y ./docs/data-model.md. Incluye: código de la API completa, "
+            "./docs/architecture.md, ./docs/data-model.md y los estándares de ./docs/STANDARDS.md "
+            "(estructura, manejo de errores, seguridad, tests). Incluye: código de la API completa, "
             "validación de inputs, manejo de errores con los códigos del contrato, y tests "
             "(unit + integración) de cada endpoint incluyendo casos de error. Si el contrato "
             "tiene un problema, NO lo cambies: documenta la objeción en NOTES.md y continúa "
@@ -94,7 +97,8 @@ def frontend_task(project: Project) -> PhaseTask:
         role="frontend",
         task=(
             "Como Frontend Engineer: implementa la interfaz según ./docs/PRD.md (flujos de "
-            "usuario) consumiendo EXACTAMENTE ./docs/api-contract.md. Lee NOTES.md: el backend "
+            "usuario) consumiendo EXACTAMENTE ./docs/api-contract.md, con la estructura y "
+            "reglas de ./docs/STANDARDS.md. Lee NOTES.md: el backend "
             "dejó ahí avisos sobre formatos reales de respuesta. Incluye estados de carga y "
             "error en cada llamada a la API. Código y commits en inglés."
         ),

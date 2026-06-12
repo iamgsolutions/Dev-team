@@ -52,12 +52,26 @@ def create(repo: Path, task_name: str) -> tuple[Path, str]:
     return wt_path, branch
 
 
-def commit_all(worktree: Path, message: str) -> bool:
-    """Stage and commit everything in the worktree. False if nothing to commit."""
+def commit_all(worktree: Path, message: str, model: str | None = None,
+               role: str | None = None) -> bool:
+    """Stage and commit everything in the worktree. False if nothing to commit.
+
+    When model/role are given they are appended as git trailers so every
+    change is forever attributable to the model that produced it:
+        Model: opencode/deepseek-v4-flash-free
+        Role: backend
+    """
     _git(worktree, "add", "-A")
     status = _git(worktree, "status", "--porcelain")
     if not status:
         return False
+    trailers = []
+    if model:
+        trailers.append(f"Model: {model}")
+    if role:
+        trailers.append(f"Role: {role}")
+    if trailers:
+        message = message + "\n\n" + "\n".join(trailers)
     _git(worktree, "commit", "-m", message)
     return True
 

@@ -23,7 +23,13 @@ from pathlib import Path
 from . import config
 
 # Conservative defaults: leave clear headroom for the humans' interactive use.
-DEFAULT_DAILY_CALLS = {"claude": 15, "codex": 20, "gemini": 25}
+# GEMINI IS DISABLED (0) by human decision 2026-06-12: he saw the engine's
+# internal cost ESTIMATE ($0.00003) and prefers not to risk any billing until
+# confirmed that CLI usage under his AI Pro subscription is not metered.
+# NOTE: that figure was our own bookkeeping estimate, NOT a Google charge -
+# OAuth "Login with Google" under AI Pro is subscription-covered (no per-call
+# billing; only API keys bill per call). Re-enable: devteam subs --set gemini 25
+DEFAULT_DAILY_CALLS = {"claude": 15, "codex": 20, "gemini": 0}
 GUARDED_BRAINS = ("claude", "codex", "gemini")  # subscription-backed brains
 DEFAULT_COOLDOWN_S = 3600  # 1h pause when the provider reports a limit
 

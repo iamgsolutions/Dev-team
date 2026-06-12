@@ -114,6 +114,25 @@ def cmd_subs(args) -> int:
     return 0
 
 
+def cmd_scorecard(args) -> int:
+    """Model accountability report (who works well, who fails)."""
+    from .reflective import format_report, bench, unbench
+    if args.bench:
+        bench(args.bench); print(f"benched: {args.bench}")
+    if args.unbench:
+        unbench(args.unbench); print(f"unbenched: {args.unbench}")
+    print(format_report())
+    return 0
+
+
+def cmd_doctor(args) -> int:
+    """Full harness health check (no token spend)."""
+    from .doctor import run_doctor, format_report
+    checks = run_doctor()
+    print(format_report(checks))
+    return 0 if all(c.ok for c in checks) else 1
+
+
 def cmd_tick(args) -> int:
     """Run a single daemon step (useful for cron/testing)."""
     from .daemon import tick
@@ -129,6 +148,12 @@ def cmd_daemon(args) -> int:
 
 
 def main(argv=None) -> int:
+    # Windows consoles default to cp1252; tool outputs may carry unicode.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except AttributeError:
+        pass
     config.ensure_dirs()
     ap = argparse.ArgumentParser(prog="devteam", description="MG 24/7 dev team engine")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -174,6 +199,14 @@ def main(argv=None) -> int:
                    help="set daily call budget, e.g. --set claude 10")
     p.add_argument("--wake", metavar="BRAIN", help="clear cooldown for a brain")
     p.set_defaults(fn=cmd_subs)
+
+    p = sub.add_parser("scorecard", help="model accountability report")
+    p.add_argument("--bench", help="send a model to the bench (excluded from fallback)")
+    p.add_argument("--unbench", help="bring a model back from the bench")
+    p.set_defaults(fn=cmd_scorecard)
+
+    p = sub.add_parser("doctor", help="harness health check (no token spend)")
+    p.set_defaults(fn=cmd_doctor)
 
     p = sub.add_parser("tick", help="run one daemon step")
     p.set_defaults(fn=cmd_tick)

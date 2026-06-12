@@ -112,6 +112,11 @@ def new_project(
     # to the 4-block instruction the engine injects.
     (project_path / "AGENTS.md").write_text(AGENTS_MD, encoding="utf-8")
 
+    # STANDARDS.md: the team's single way of building (structure, code rules,
+    # security, tests). The Architect follows it instead of inventing.
+    from .standards import write_standards
+    write_standards(project_path)
+
     first_line = next((ln.strip("# ").strip() for ln in brief_text.splitlines() if ln.strip()), name)
     init_memory(project_path, name, first_line)
 

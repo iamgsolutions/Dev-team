@@ -46,53 +46,78 @@ def run_phase(project: Project) -> PhaseOutcome:
                             f"fase {phase!r} no ejecutable por el pipeline (deploy/review/done: M6)")
 
     spec = PHASE_TASKS[phase](project)
-    result = execute_task(
-        project=project,
-        role=spec.role,
-        task=spec.task,
-        acceptance_criteria=spec.acceptance_criteria,
-        critical=spec.critical,
-        forbidden=spec.forbidden,
-        gates=spec.gates,
-        expected_output=spec.expected_output,
-    )
 
-    if result.status == "deferred":
-        # Premium brains resting (subscription guardian) - NOT an error.
-        # The daemon retries on a later batch; no human action needed.
-        return PhaseOutcome(phase, result, None, None,
-                            "aplazada: cerebros premium descansando (ración/límite); se reintentará en la siguiente tanda")
+    # ERROR-CORRECTION CASCADE (human's mandate: "cuando haya errores que
+    # primero traten de solucionarlos ellos, si no que suban a Hermes").
+    # Attempt 1 runs the phase task; if gates/audit fail, the agent gets the
+    # exact failure feedback and fixes its OWN work in the same worktree.
+    # Only after MAX_TASK_RETRIES does the blocker escalate to Hermes/human.
+    from pathlib import Path as _P
+    from . import config as _cfg
+    from . import reflective
+    from .gates import run_gates
+    from .audit import audit_worktree
 
-    if result.status != "ok":
+    result: TaskResult | None = None
+    failure_feedback = ""
+    for attempt in range(1, _cfg.MAX_TASK_RETRIES + 1):
+        task_text = spec.task if not failure_feedback else (
+            spec.task
+            + f"\n\nCORRECCIÓN (intento {attempt}): tu trabajo anterior en este mismo "
+              f"worktree NO pasó el control de calidad. Arregla EXACTAMENTE esto y "
+              f"no rompas lo que ya funciona:\n{failure_feedback[:1500]}"
+        )
+        result = execute_task(
+            project=project,
+            role=spec.role,
+            task=task_text,
+            acceptance_criteria=spec.acceptance_criteria,
+            critical=spec.critical,
+            forbidden=spec.forbidden,
+            gates=spec.gates,
+            expected_output=spec.expected_output,
+        )
+
+        if result.status == "deferred":
+            return PhaseOutcome(phase, result, None, None,
+                                "aplazada: cerebros premium descansando (ración/límite); se reintentará en la siguiente tanda")
+        if result.status != "ok":
+            failure_feedback = f"la ejecución falló ({result.status}): {result.output[:600]}"
+            continue  # self-heal: retry (executor's fallback already tried other models)
+
+        # QUALITY GATES before merge (spec R5: nada avanza sin pasar gates)
+        if result.worktree:
+            report = run_gates(_P(result.worktree))
+            if not report.passed:
+                reflective.record(result.model, result.brain, "gate_failed",
+                                  note=f"{phase}: {report.summary()[:60]}")
+                failing = "; ".join(f"{c.name}: {c.output[-400:]}" for c in report.checks
+                                    if not c.passed and not c.skipped)
+                failure_feedback = f"GATES fallidos — {report.summary()}. Detalle: {failing}"
+                continue  # self-heal: agent fixes its own gate failures
+
+            # MULTI-MODEL AUDIT for code phases (spec R5). PM/Architect output
+            # is audited by the HUMAN checkpoint instead.
+            if phase in ("backend", "frontend"):
+                verdict = audit_worktree(_P(result.worktree), author_model=result.model,
+                                         context=f"fase {phase} del proyecto {project.name}",
+                                         critical=spec.critical)
+                if not verdict.approved:
+                    reflective.record(result.model, result.brain, "audit_rejected",
+                                      note=f"{phase}")
+                    failure_feedback = ("AUDITORÍA rechazada. Hallazgos de los auditores:\n"
+                                        + verdict.details[:1200])
+                    continue  # self-heal: agent fixes audited findings
+
+        break  # ok + gates + audit -> done
+    else:
+        # cascade exhausted -> escalate to Hermes/human (Discord blocker)
         blocker(project.discord_channel,
-                f"Proyecto {project.name} · fase {phase}: tarea fallida ({result.status}). "
-                f"Cerebro {result.brain}/{result.model}.")
-        return PhaseOutcome(phase, result, None, None, f"tarea fallida: {result.status}")
-
-    # QUALITY GATES before merge (spec R5: nada avanza sin pasar gates)
-    if result.worktree:
-        from pathlib import Path as _P
-        from .gates import run_gates
-        report = run_gates(_P(result.worktree))
-        if not report.passed:
-            blocker(project.discord_channel,
-                    f"Proyecto {project.name} · fase {phase}: GATES fallidos — {report.summary()}. "
-                    f"El trabajo queda en la rama {result.branch} sin mergear.")
-            return PhaseOutcome(phase, result, None, None, f"gates fallidos: {report.summary()}")
-
-        # MULTI-MODEL AUDIT for code phases (spec R5: escalado por criticidad).
-        # PM/Architect output is audited by the HUMAN checkpoint instead.
-        if phase in ("backend", "frontend"):
-            from .audit import audit_worktree
-            verdict = audit_worktree(_P(result.worktree), author_model=result.model,
-                                     context=f"fase {phase} del proyecto {project.name}",
-                                     critical=spec.critical)
-            if not verdict.approved:
-                blocker(project.discord_channel,
-                        f"Proyecto {project.name} · fase {phase}: AUDITORÍA rechazada "
-                        f"({len(verdict.votes)} auditores). Trabajo en rama {result.branch} sin mergear.")
-                return PhaseOutcome(phase, result, None, None,
-                                    f"auditoría rechazada:\n{verdict.details[:800]}")
+                f"Proyecto {project.name} · fase {phase}: agotados {_cfg.MAX_TASK_RETRIES} "
+                f"intentos de autocorrección. Último fallo: {failure_feedback[:400]} "
+                f"Trabajo en rama {result.branch if result else '?'} sin mergear. Necesito dirección.")
+        return PhaseOutcome(phase, result, None, None,
+                            f"cascada agotada tras {_cfg.MAX_TASK_RETRIES} intentos: {failure_feedback[:300]}")
 
     # merge the phase branch into main (gates passed)
     if result.branch:

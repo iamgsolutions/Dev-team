@@ -72,6 +72,13 @@ def adopt_project(
         encoding="utf-8",
     )
 
+    # runtime state must not travel in shared repos (local paths, cursors)
+    gi = path / ".gitignore"
+    marker = ".project-memory/project.json"
+    if not gi.exists() or marker not in gi.read_text(encoding="utf-8", errors="ignore"):
+        with gi.open("a", encoding="utf-8") as f:
+            f.write(f"\n# devteam runtime state (local)\n{marker}\n")
+
     if not (path / "AGENTS.md").exists():
         (path / "AGENTS.md").write_text(AGENTS_MD, encoding="utf-8")
     if not (path / "docs" / "STANDARDS.md").exists():

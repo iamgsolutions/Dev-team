@@ -39,9 +39,10 @@ def test_cap_is_a_hard_stop(isolated_dirs):
 
 
 def test_free_models_cost_zero():
-    assert estimate_cost_usd(
-        "openrouter/meta-llama/llama-3.3-70b-instruct:free", 100_000, 50_000
-    ) == 0.0
-    assert estimate_cost_usd("openrouter/deepseek/deepseek-chat", 1_000_000, 0) == pytest.approx(0.30)
+    from devteam import config
+    for m in config.OPENCODE_FREE_MODELS:
+        assert estimate_cost_usd(m, 100_000, 50_000) == 0.0, m
+    for m in config.OPENCODE_CHEAP_MODELS:
+        assert estimate_cost_usd(m, 1_000_000, 100_000) > 0, m
     # unknown models must never be assumed free
     assert estimate_cost_usd("totally-unknown-model", 1_000_000, 1_000_000) > 0

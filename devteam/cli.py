@@ -23,6 +23,15 @@ def cmd_new_project(args) -> int:
     return 0
 
 
+def cmd_adopt(args) -> int:
+    from .adopt import adopt_project
+    p = adopt_project(Path(args.path), name=args.name, cap=args.cap,
+                      discord_channel=args.discord or "", initial_state=args.state)
+    print(f"adopted: {p.name} at {p.path} [state={p.state}] cap=${p.budget_cap_usd:.0f}")
+    print("primera misión sugerida: devteam run-phase", p.name, "(QA audita lo existente)")
+    return 0
+
+
 def cmd_status(args) -> int:
     if args.name:
         p = registry_get(args.name)
@@ -164,6 +173,14 @@ def main(argv=None) -> int:
     p.add_argument("--cap", type=float)
     p.add_argument("--discord", help="discord target e.g. discord:123:thread456")
     p.set_defaults(fn=cmd_new_project)
+
+    p = sub.add_parser("adopt", help="adopt an EXISTING repo into the system")
+    p.add_argument("path")
+    p.add_argument("--name")
+    p.add_argument("--cap", type=float)
+    p.add_argument("--discord")
+    p.add_argument("--state", default="qa", help="initial state (default qa: audit first)")
+    p.set_defaults(fn=cmd_adopt)
 
     p = sub.add_parser("status", help="show project(s) status")
     p.add_argument("name", nargs="?")

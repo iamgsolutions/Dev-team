@@ -15,6 +15,36 @@ from . import config, worktree
 from .memory import init_memory
 from .state import Project, registry_add
 
+# Universal team rules, written into every project repo. The three coding
+# CLIs (claude/codex/opencode) auto-read AGENTS.md from the working directory,
+# so these rules apply on every invocation - belt AND suspenders with the
+# engine's 4-block instructions. Source: mg-kb/build/05-agent-rules.md.
+AGENTS_MD = """\
+# AGENTS.md - Reglas del equipo (obligatorias para TODO agente en este repo)
+
+Trabajas dentro del equipo de desarrollo 24/7 de MG, dirigido por el motor
+`devteam`. Estas reglas aplican SIEMPRE, ademas de la instruccion que recibas:
+
+1. Eres STATELESS. Lee `.project-memory/STATE.md` y `.project-memory/NOTES.md`
+   antes de actuar. El brief esta en `BRIEF.md`; los contratos en `docs/`.
+2. ANTES DE CERRAR actualiza `.project-memory/STATE.md` (que hiciste, que
+   queda) y `.project-memory/NOTES.md` (decisiones, dudas, avisos al
+   siguiente agente). Sin esto tu tarea NO esta completa.
+3. Cinete a la tarea encargada. No "mejores" cosas no pedidas.
+4. NUNCA escribas secretos (claves, tokens) en codigo, commits o logs.
+   Usa variables de entorno (.env esta en .gitignore).
+5. Tu salida debe compilar y pasar lint y tests. Escribe tests de lo que
+   produces.
+6. Codigo, identificadores y commits en INGLES. Documentacion en ESPANOL.
+7. Sigue las decisiones de `docs/architecture.md` y `docs/api-contract.md`
+   EXACTAMENTE. Si crees que hay un error, anotalo en NOTES.md - no lo
+   cambies por tu cuenta.
+8. Trabaja solo en este directorio. No toques otros proyectos ni el sistema.
+9. Commits convencionales: feat:/fix:/test:/docs:/chore:.
+10. HONESTIDAD: si algo no funciona o no es posible, dilo claramente en
+    NOTES.md. No finjas exito.
+"""
+
 # critical sections: without these we go to clarification
 CRITICAL_PATTERNS = {
     "objetivo": r"##\s*2?\.?\s*Objetivo|qué problema",
@@ -76,6 +106,11 @@ def new_project(
     project_path.mkdir(parents=True, exist_ok=True)
     worktree.ensure_repo(project_path)
     shutil.copy(brief_path, project_path / "BRIEF.md")
+
+    # AGENTS.md: claude/codex/opencode read this automatically from the cwd -
+    # it reinforces the universal team rules on EVERY invocation, in addition
+    # to the 4-block instruction the engine injects.
+    (project_path / "AGENTS.md").write_text(AGENTS_MD, encoding="utf-8")
 
     first_line = next((ln.strip("# ").strip() for ln in brief_text.splitlines() if ln.strip()), name)
     init_memory(project_path, name, first_line)

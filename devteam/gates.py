@@ -72,12 +72,60 @@ def _default_gates(workdir: Path) -> list[dict]:
     return gates
 
 
+# Secret patterns scanned on EVERY gate run (built-in, free, no external tool).
+# Conservative: high-signal prefixes only, to avoid drowning in false positives.
+SECRET_PATTERNS = [
+    r"sk-[A-Za-z0-9_\-]{20,}",          # OpenAI/Anthropic/OpenRouter style keys
+    r"ghp_[A-Za-z0-9]{30,}",            # GitHub PAT
+    r"github_pat_[A-Za-z0-9_]{30,}",    # GitHub fine-grained PAT
+    r"xox[baprs]-[A-Za-z0-9\-]{10,}",   # Slack tokens
+    r"AKIA[0-9A-Z]{16}",                # AWS access key id
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
+]
+SECRET_SCAN_EXTS = {".py", ".js", ".ts", ".tsx", ".jsx", ".json", ".yaml", ".yml",
+                    ".toml", ".md", ".env.example", ".cfg", ".ini", ".sql", ".sh", ".ps1"}
+
+
+def scan_secrets(workdir: Path, max_files: int = 2000) -> list[str]:
+    """Return findings like 'file:line: pattern'. Skips .git, .env, venvs."""
+    import re as _re
+    findings: list[str] = []
+    compiled = [_re.compile(p) for p in SECRET_PATTERNS]
+    count = 0
+    for f in workdir.rglob("*"):
+        if count >= max_files or len(findings) >= 20:
+            break
+        parts = {p.lower() for p in f.parts}
+        if {".git", ".venv", "node_modules", "__pycache__"} & parts:
+            continue
+        if not f.is_file() or f.name == ".env" or f.suffix.lower() not in SECRET_SCAN_EXTS:
+            continue
+        count += 1
+        try:
+            text = f.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        for i, line in enumerate(text.splitlines(), 1):
+            for pat in compiled:
+                if pat.search(line):
+                    findings.append(f"{f.relative_to(workdir)}:{i}")
+                    break
+    return findings
+
+
 def run_gates(workdir: Path, timeout_s: int = 900) -> GateReport:
     specs = _load_custom_gates(workdir)
     if specs is None:
         specs = _default_gates(workdir)
 
     checks: list[GateCheck] = []
+
+    # Built-in security gate: ALWAYS runs (spec: hardening basico siempre).
+    leaks = scan_secrets(workdir)
+    checks.append(GateCheck(
+        "secrets", passed=not leaks,
+        output=("clean" if not leaks else "posibles secretos en: " + ", ".join(leaks)),
+    ))
     for spec in specs:
         name, cmd = spec.get("name", "gate"), spec.get("cmd", [])
         if not cmd:

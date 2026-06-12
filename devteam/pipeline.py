@@ -71,14 +71,28 @@ def run_phase(project: Project) -> PhaseOutcome:
 
     # QUALITY GATES before merge (spec R5: nada avanza sin pasar gates)
     if result.worktree:
-        from .gates import run_gates
         from pathlib import Path as _P
+        from .gates import run_gates
         report = run_gates(_P(result.worktree))
         if not report.passed:
             blocker(project.discord_channel,
                     f"Proyecto {project.name} · fase {phase}: GATES fallidos — {report.summary()}. "
                     f"El trabajo queda en la rama {result.branch} sin mergear.")
             return PhaseOutcome(phase, result, None, None, f"gates fallidos: {report.summary()}")
+
+        # MULTI-MODEL AUDIT for code phases (spec R5: escalado por criticidad).
+        # PM/Architect output is audited by the HUMAN checkpoint instead.
+        if phase in ("backend", "frontend"):
+            from .audit import audit_worktree
+            verdict = audit_worktree(_P(result.worktree), author_model=result.model,
+                                     context=f"fase {phase} del proyecto {project.name}",
+                                     critical=spec.critical)
+            if not verdict.approved:
+                blocker(project.discord_channel,
+                        f"Proyecto {project.name} · fase {phase}: AUDITORÍA rechazada "
+                        f"({len(verdict.votes)} auditores). Trabajo en rama {result.branch} sin mergear.")
+                return PhaseOutcome(phase, result, None, None,
+                                    f"auditoría rechazada:\n{verdict.details[:800]}")
 
     # merge the phase branch into main (gates passed)
     if result.branch:

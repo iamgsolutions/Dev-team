@@ -57,6 +57,7 @@ MAX_TASK_RETRIES = 3            # per-task retry budget before escalating
 
 BRAIN_CLAUDE = "claude"
 BRAIN_CODEX = "codex"
+BRAIN_GEMINI = "gemini"
 BRAIN_OPENCODE = "opencode"
 
 # Default model per brain. OpenCode free-first cascade lives in router/brains.
@@ -67,7 +68,8 @@ DEFAULT_MODELS = {
     # Automation uses SONNET, not opus: rations the Max subscription (the
     # humans use it interactively too) while staying premium-grade for design.
     BRAIN_CLAUDE: "sonnet",
-    BRAIN_CODEX: None,   # codex CLI uses its own configured default
+    BRAIN_CODEX: None,    # codex CLI uses its own configured default
+    BRAIN_GEMINI: None,   # gemini CLI default (Pro subscription limits apply)
     BRAIN_OPENCODE: "opencode/deepseek-v4-flash-free",
 }
 
@@ -95,6 +97,7 @@ MODEL_PRICING: dict[str, tuple[float, float]] = {
     # premium (when CLIs don't self-report cost)
     "claude-default": (3.00, 15.00),   # sonnet-class assumption
     "codex-default": (2.00, 8.00),     # gpt-5-class assumption (verify)
+    "gemini-default": (1.25, 10.00),   # gemini-pro-class assumption
 }
 FALLBACK_PRICING = (1.0, 3.0)  # unknown model: assume cheap-ish, never free
 

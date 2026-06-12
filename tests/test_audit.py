@@ -43,6 +43,8 @@ def test_audit_rejects_on_critical_findings(tmp_path, monkeypatch):
                         fake_invoke("VEREDICTO: RECHAZADO\nHALLAZGOS:\n- crítico: SQL injection"))
     monkeypatch.setattr(audit.codex_brain, "invoke",
                         fake_invoke("VEREDICTO: RECHAZADO\nHALLAZGOS:\n- crítico: confirmo"))
+    monkeypatch.setattr(audit.gemini_brain, "invoke",
+                        fake_invoke("VEREDICTO: RECHAZADO\nHALLAZGOS:\n- crítico: confirmo"))
     rep = audit.audit_worktree(repo, author_model=None, critical=True)
     assert not rep.approved
     assert len(rep.votes) >= 2                      # critical -> panel

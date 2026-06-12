@@ -23,7 +23,8 @@ from pathlib import Path
 from . import config
 
 # Conservative defaults: leave clear headroom for the humans' interactive use.
-DEFAULT_DAILY_CALLS = {"claude": 15, "codex": 20}
+DEFAULT_DAILY_CALLS = {"claude": 15, "codex": 20, "gemini": 25}
+GUARDED_BRAINS = ("claude", "codex", "gemini")  # subscription-backed brains
 DEFAULT_COOLDOWN_S = 3600  # 1h pause when the provider reports a limit
 
 RATE_LIMIT_MARKERS = (
@@ -74,7 +75,7 @@ def looks_rate_limited(text: str) -> bool:
 
 def available(brain: str) -> bool:
     """Can the engine use this premium brain right now?"""
-    if brain not in ("claude", "codex"):
+    if brain not in GUARDED_BRAINS:
         return True  # opencode etc. are not subscription-guarded
     state = _load()
     b = _brain_state(state, brain)
@@ -87,7 +88,7 @@ def available(brain: str) -> bool:
 
 
 def record_call(brain: str) -> None:
-    if brain not in ("claude", "codex"):
+    if brain not in GUARDED_BRAINS:
         return
     state = _load()
     b = _brain_state(state, brain)
@@ -114,7 +115,7 @@ def status() -> dict:
     """For reporting: calls used / budget / cooldown per premium brain."""
     state = _load()
     out = {}
-    for brain in ("claude", "codex"):
+    for brain in GUARDED_BRAINS:
         b = _brain_state(state, brain)
         cooling = False
         if b["cooldown_until"]:

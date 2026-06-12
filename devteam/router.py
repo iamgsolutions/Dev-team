@@ -39,30 +39,29 @@ def route(
     free_tier_exhausted: bool = False,
     claude_available: bool = True,
     codex_available: bool = True,
+    gemini_available: bool = True,
 ) -> Route:
-    """Pick a brain. Subscription guardian (claude/codex availability) feeds in
+    """Pick a brain. Subscription guardian (premium availability) feeds in
     here: premium work without an available premium brain DEFERS instead of
     silently degrading (human's batching policy - quality over speed)."""
     role = role.lower()
 
-    # Audit: must differ from author (diversity principle).
+    # Audit: must differ from author (diversity principle). Gemini is the
+    # PREFERRED auditor: diverse, huge context, and saves the codex ration.
     if role in AUDIT_ROLES:
-        if author_brain == config.BRAIN_CODEX:
-            return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted),
-                         "audit: diverse brain (author was codex)")
-        if author_brain == config.BRAIN_CLAUDE:
-            if codex_available:
-                return Route(config.BRAIN_CODEX, None, "audit: diverse brain (author was claude)")
-            return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted),
-                         "audit: codex resting -> diverse cheap model")
-        # author was opencode (or unknown)
-        if codex_available and budget_remaining_usd > 1.0:
-            return Route(config.BRAIN_CODEX, None, "audit: diverse brain (author was opencode)")
+        candidates = []
+        if gemini_available and author_brain != config.BRAIN_GEMINI:
+            candidates.append((config.BRAIN_GEMINI, "audit: gemini (diverse, big context)"))
+        if codex_available and author_brain != config.BRAIN_CODEX:
+            candidates.append((config.BRAIN_CODEX, "audit: codex (diverse)"))
+        for brain, why in candidates:
+            if budget_remaining_usd > 1.0:
+                return Route(brain, None, f"{why}; author was {author_brain or 'unknown'}")
         return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted),
-                     "audit: diverse-ish cheap model (codex resting or budget low)")
+                     f"audit: cheap diverse model (premium resting or budget low; author {author_brain or 'unknown'})")
 
-    # Critical / design work wants a premium brain. If both premium brains are
-    # resting (ration spent or rate-limited), DEFER - the daemon retries later.
+    # Critical / design work wants a premium brain. Escalation chain:
+    # claude -> codex -> gemini -> DEFER (the daemon retries later).
     if critical or role in DESIGN_ROLES:
         if budget_remaining_usd <= 2.0:
             return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted=True),
@@ -72,8 +71,11 @@ def route(
         if codex_available:
             return Route(config.BRAIN_CODEX, None,
                          f"{role}: claude resting -> codex (second premium brain)")
+        if gemini_available:
+            return Route(config.BRAIN_GEMINI, None,
+                         f"{role}: claude+codex resting -> gemini (third premium brain)")
         return Route(BRAIN_DEFER, None,
-                     f"{role}: premium-grade task, both premium brains resting -> defer to next batch")
+                     f"{role}: premium-grade task, all premium brains resting -> defer to next batch")
 
     # Execution (default): free first, escalate to cheap when free is exhausted.
     return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted),

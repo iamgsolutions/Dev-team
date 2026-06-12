@@ -59,6 +59,7 @@ def execute_task(
         author_brain=author_brain,
         claude_available=subscription.available(config.BRAIN_CLAUDE),
         codex_available=subscription.available(config.BRAIN_CODEX),
+        gemini_available=subscription.available(config.BRAIN_GEMINI),
     )
     if rt.brain == "defer":
         # Premium ration spent / cooling down -> task waits for the next batch
@@ -92,7 +93,7 @@ def execute_task(
     try:
         before = snapshot_mtimes(project.path)
         result = _invoke(rt, prompt, wt_path, timeout_s)
-        if rt.brain in (config.BRAIN_CLAUDE, config.BRAIN_CODEX):
+        if rt.brain in subscription.GUARDED_BRAINS:
             subscription.record_call(rt.brain)
             if result.status == "rate_limited":
                 # Rest the brain and defer - the daemon retries in a later batch.

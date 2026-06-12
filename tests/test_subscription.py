@@ -45,8 +45,9 @@ def test_opencode_is_never_guarded(isolated_dirs):
 
 # --- router x availability ----------------------------------------------------
 
-def test_critical_defers_when_both_premium_resting():
-    r = route("backend", critical=True, claude_available=False, codex_available=False)
+def test_critical_defers_when_all_premium_resting():
+    r = route("backend", critical=True, claude_available=False,
+              codex_available=False, gemini_available=False)
     assert r.brain == BRAIN_DEFER
 
 
@@ -55,9 +56,33 @@ def test_critical_falls_to_codex_when_claude_resting():
     assert r.brain == "codex"
 
 
-def test_audit_degrades_to_cheap_when_codex_resting():
-    r = route("review", author_brain="claude", codex_available=False)
+def test_critical_falls_to_gemini_when_claude_and_codex_resting():
+    r = route("architect", critical=True, claude_available=False,
+              codex_available=False, gemini_available=True)
+    assert r.brain == "gemini"
+
+
+def test_audit_prefers_gemini_for_diversity():
+    r = route("review", author_brain="claude")
+    assert r.brain == "gemini"          # saves the codex ration
+
+
+def test_audit_never_uses_author_even_if_gemini_authored():
+    r = route("review", author_brain="gemini")
+    assert r.brain == "codex"
+
+
+def test_audit_degrades_to_cheap_when_premium_resting():
+    r = route("review", author_brain="claude",
+              codex_available=False, gemini_available=False)
     assert r.brain == "opencode"
+
+
+def test_gemini_is_guarded(isolated_dirs):
+    subscription.set_daily_budget("gemini", 2)
+    subscription.record_call("gemini")
+    subscription.record_call("gemini")
+    assert not subscription.available("gemini")
 
 
 def test_execution_unaffected_by_premium_availability():

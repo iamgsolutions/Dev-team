@@ -20,6 +20,7 @@ from pathlib import Path
 from . import config, subscription
 from .brains import opencode as oc_brain
 from .brains import codex as codex_brain
+from .brains import gemini as gemini_brain
 
 VERDICT_APPROVED = "APROBADO"
 VERDICT_REJECTED = "RECHAZADO"
@@ -96,16 +97,25 @@ def audit_worktree(
         votes.append((model, ok))
         notes.append(f"[{model}] {'OK' if ok else 'REJECT/FAIL'}: {res.output[:400]}")
 
-    if critical and subscription.available(config.BRAIN_CODEX):
-        res = codex_brain.invoke(prompt, worktree, timeout_s)
-        subscription.record_call(config.BRAIN_CODEX)
-        if res.status == "rate_limited":
-            subscription.report_rate_limit(config.BRAIN_CODEX)
-            notes.append("[codex] rate-limited - skipped")
-        else:
-            ok = res.status == "ok" and _parse_verdict(res.output)
-            votes.append(("codex", ok))
-            notes.append(f"[codex] {'OK' if ok else 'REJECT/FAIL'}: {res.output[:400]}")
+    if critical:
+        # Premium vote for critical work: prefer GEMINI (saves codex ration),
+        # fall back to codex if gemini is resting.
+        premium = None
+        if subscription.available(config.BRAIN_GEMINI):
+            premium = (config.BRAIN_GEMINI, gemini_brain.invoke)
+        elif subscription.available(config.BRAIN_CODEX):
+            premium = (config.BRAIN_CODEX, codex_brain.invoke)
+        if premium:
+            name, inv = premium
+            res = inv(prompt, worktree, timeout_s)
+            subscription.record_call(name)
+            if res.status == "rate_limited":
+                subscription.report_rate_limit(name)
+                notes.append(f"[{name}] rate-limited - skipped")
+            else:
+                ok = res.status == "ok" and _parse_verdict(res.output)
+                votes.append((name, ok))
+                notes.append(f"[{name}] {'OK' if ok else 'REJECT/FAIL'}: {res.output[:400]}")
 
     if not votes:
         return AuditReport(False, details="no auditors could run")

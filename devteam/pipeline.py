@@ -1,14 +1,106 @@
-"""Pipeline runner (S6) - SKELETON for Fase 2 / M4.
+"""Pipeline runner (S6) - strict sequential phases with human checkpoints.
 
-Will run the strict-sequential pipeline (pm -> architect -> backend -> frontend
--> qa -> deploy -> review) with human checkpoints after pm and architect,
-quality gates before merges, and the audit loop. See build/03-build-roadmap.md
-FASE 2 and build/06-skills-to-build.md S6/S7.
-
-TODO(M4):
-- per-phase task generation from PRD/architecture docs
-- human checkpoint wait-loop (Discord approval via intervention listener)
-- branch/PR/merge flow using worktree.merge_branch after gates pass
-- bounce-back from qa to backend/frontend with corrective tasks
+M4 v1: run_phase() executes the current phase's macro-task and advances the
+state machine. Human checkpoints (after pm / architect / review) block
+advancement until approve() is called (CLI now; Discord approval when the
+daemon lands). Merging task branches happens after gates+audit (M5) - for now
+work stays on its task branch and is merged manually or by approve.
 """
 from __future__ import annotations
+
+from dataclasses import dataclass
+
+from . import worktree
+from .discord_bridge import blocker, milestone
+from .executor import TaskResult, execute_task
+from .roles import PHASE_TASKS
+from .state import Project
+
+NEXT_AFTER_QA_OK = "deploy"
+
+
+@dataclass
+class PhaseOutcome:
+    phase: str
+    result: TaskResult | None
+    advanced_to: str | None
+    waiting_human: str | None   # checkpoint description if blocked on approval
+    note: str = ""
+
+
+def run_phase(project: Project) -> PhaseOutcome:
+    """Execute the macro-task of the CURRENT phase. Does not skip checkpoints."""
+    if project.paused:
+        return PhaseOutcome(project.state, None, None, None, "proyecto pausado")
+
+    phase = project.state
+    if phase == "clarification":
+        return PhaseOutcome(phase, None, None,
+                            "responder a las preguntas de clarificación en el hilo",
+                            "esperando respuestas del humano al brief")
+    if phase not in PHASE_TASKS:
+        return PhaseOutcome(phase, None, None, None,
+                            f"fase {phase!r} no ejecutable por el pipeline (deploy/review/done: M6)")
+
+    spec = PHASE_TASKS[phase](project)
+    result = execute_task(
+        project=project,
+        role=spec.role,
+        task=spec.task,
+        acceptance_criteria=spec.acceptance_criteria,
+        critical=spec.critical,
+        forbidden=spec.forbidden,
+        gates=spec.gates,
+        expected_output=spec.expected_output,
+    )
+
+    if result.status != "ok":
+        blocker(project.discord_channel,
+                f"Proyecto {project.name} · fase {phase}: tarea fallida ({result.status}). "
+                f"Cerebro {result.brain}/{result.model}.")
+        return PhaseOutcome(phase, result, None, None, f"tarea fallida: {result.status}")
+
+    # merge the phase branch into main (M4 v1: gates/audit arrive in M5)
+    if result.branch:
+        try:
+            worktree.merge_branch(project.path, result.branch,
+                                  f"merge({phase}): {result.branch}")
+        except worktree.GitError as e:
+            return PhaseOutcome(phase, result, None, None, f"merge falló: {e}")
+
+    checkpoint = project.requires_human_checkpoint()
+    if checkpoint:
+        milestone(project.discord_channel,
+                  f"Proyecto {project.name}: fase **{phase}** completada. "
+                  f"CHECKPOINT: {checkpoint}. Usa `devteam approve {project.name}` (o di 'aprobado' en el hilo).")
+        return PhaseOutcome(phase, result, None, checkpoint)
+
+    nxt = _next_state(project)
+    project.transition(nxt, f"fase {phase} completada (auto)")
+    milestone(project.discord_channel,
+              f"Proyecto {project.name}: fase **{phase}** completada → **{nxt}**. "
+              f"Gasto: ${project.spent_usd:.2f}/${project.budget_cap_usd:.0f}.")
+    return PhaseOutcome(phase, result, nxt, None)
+
+
+def approve(project: Project) -> str:
+    """Human approves the pending checkpoint -> advance to next phase."""
+    checkpoint = project.requires_human_checkpoint()
+    if not checkpoint:
+        return f"{project.name}: no hay checkpoint pendiente en fase {project.state}"
+    if project.state == "review":
+        project.transition("done", "entrega aceptada por el humano")
+        milestone(project.discord_channel, f"Proyecto {project.name}: ACEPTADO y terminado. ✔")
+        return f"{project.name}: done"
+    nxt = _next_state(project)
+    project.transition(nxt, f"checkpoint aprobado por el humano: {checkpoint}")
+    milestone(project.discord_channel,
+              f"Proyecto {project.name}: checkpoint aprobado → fase **{nxt}**.")
+    return f"{project.name}: {nxt}"
+
+
+def _next_state(project: Project) -> str:
+    from . import config
+    allowed = config.TRANSITIONS[project.state]
+    # sequential default: first allowed forward state
+    return allowed[0]

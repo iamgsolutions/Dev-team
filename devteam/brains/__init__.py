@@ -33,6 +33,8 @@ def run_cli(
     input_text: str | None = None,
 ) -> tuple[int, str, str, float]:
     """Run a CLI; return (returncode, stdout, stderr, duration). -1 rc on timeout."""
+    # Windows-safe executable resolution (npm .cmd wrappers, minimal PATHs)
+    args = [config.resolve_cli(args[0]), *args[1:]]
     t0 = monotonic()
     try:
         proc = subprocess.run(

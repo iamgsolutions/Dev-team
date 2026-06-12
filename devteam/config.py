@@ -24,6 +24,29 @@ HERMES_EXE = Path(
 
 PROJECT_MEMORY_DIR = ".project-memory"  # inside each project repo
 
+# Known location of npm-installed CLIs (claude/codex/opencode live here as
+# .cmd wrappers). subprocess on Windows does not apply PATHEXT, and service
+# processes may have a minimal PATH - so we resolve executables explicitly.
+NPM_BIN = Path(os.environ.get("APPDATA", r"C:\Users\Administrator\AppData\Roaming")) / "npm"
+
+
+def resolve_cli(name: str) -> str:
+    """Resolve a CLI name to a full executable path (Windows-safe).
+
+    Order: shutil.which (honors PATHEXT) -> NPM_BIN/<name>.cmd|.exe -> name as-is
+    (last resort lets the caller surface a clear 'not found' error).
+    """
+    import shutil
+
+    found = shutil.which(name)
+    if found:
+        return found
+    for suffix in (".cmd", ".exe", ".bat"):
+        cand = NPM_BIN / f"{name}{suffix}"
+        if cand.exists():
+            return str(cand)
+    return name
+
 # --- Budget defaults (spec R3/R6) -------------------------------------------
 
 DEFAULT_BUDGET_CAP_USD = 30.0   # mid of the 20-50 range chosen by the human

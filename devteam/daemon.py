@@ -1,11 +1,70 @@
-"""24/7 daemon (S13-driven loop) - SKELETON for Fase 2 / M4.
+"""24/7 daemon (M4b) - durable loop over the project registry.
 
-Loop: pick active project -> honor paused flag -> check Discord thread for
-human interventions (pause/redirect) -> execute next pipeline step -> report
-milestones/blockers -> repeat. Designed to survive restarts (all state is on
-disk via state.py).
+Honors (spec R4/R7): one project at a time, paused flag, human checkpoints
+(does not re-run a completed phase while waiting approval), clarification
+waits, budget pauses. All state is on disk - the daemon can die and resume.
 
-TODO(M4): intervention listener (read Discord thread via hermes CLI or
-gateway state), scheduling, crash-safe loop, Windows service registration.
+Not yet wired (M4c/M5+): reading human orders from the Discord thread
+(today pause/approve arrive via CLI or Hermes skill), deploy phase (M6).
 """
 from __future__ import annotations
+
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+from .pipeline import run_phase
+from .state import Project, registry_load
+
+ACTIONABLE_STATES = {"pm", "architect", "backend", "frontend", "qa"}
+
+
+@dataclass
+class TickResult:
+    acted_on: str | None      # project name we ran a phase for
+    note: str
+
+
+def _candidates() -> list[Project]:
+    reg = registry_load()
+    out: list[Project] = []
+    for name, path in reg["projects"].items():
+        try:
+            out.append(Project.load(Path(path)))
+        except Exception as e:  # noqa: BLE001 - a corrupt project must not kill the loop
+            print(f"[daemon] skipping unreadable project {name}: {e}")
+    return out
+
+
+def _actionable(p: Project) -> bool:
+    if p.paused or p.state not in ACTIONABLE_STATES:
+        return False
+    if p.phase_completed and p.requires_human_checkpoint():
+        return False  # waiting for human approval
+    return True
+
+
+def tick() -> TickResult:
+    """Run ONE phase step for the first actionable project (1 project at a time)."""
+    for p in _candidates():
+        if not _actionable(p):
+            continue
+        out = run_phase(p)
+        return TickResult(p.name, f"{out.phase} -> {out.advanced_to or out.waiting_human or out.note}")
+    return TickResult(None, "nothing actionable (all waiting/paused/done)")
+
+
+def loop(interval_s: int = 60) -> None:
+    """Blocking 24/7 loop. Ctrl+C to stop. State survives restarts."""
+    print(f"[daemon] started, interval={interval_s}s. Ctrl+C to stop.")
+    while True:
+        try:
+            r = tick()
+            if r.acted_on:
+                print(f"[daemon] {r.acted_on}: {r.note}")
+        except KeyboardInterrupt:
+            print("[daemon] stopped by user")
+            return
+        except Exception as e:  # noqa: BLE001 - the loop must survive anything
+            print(f"[daemon] tick error (loop continues): {e}")
+        time.sleep(interval_s)

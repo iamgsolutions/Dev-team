@@ -15,8 +15,10 @@ RATE_LIMIT_MARKERS = ("rate limit", "rate-limit", "429", "too many requests", "q
 
 def invoke(prompt: str, cwd: Path, timeout_s: int = 1800, model: str | None = None) -> BrainResult:
     model = model or config.DEFAULT_MODELS[config.BRAIN_OPENCODE]
-    args = ["opencode", "run", prompt, "--model", model]
-    rc, out, err, dur = run_cli(args, cwd, timeout_s)
+    # Prompt via STDIN: cmd.exe wrappers mangle multiline positional args,
+    # which silently breaks --model parsing (verified 2026-06-12).
+    args = ["opencode", "run", "--model", model]
+    rc, out, err, dur = run_cli(args, cwd, timeout_s, input_text=prompt)
 
     if rc == -1:
         return BrainResult("timeout", out or err, 0.0, model, dur)

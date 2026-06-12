@@ -14,10 +14,11 @@ from . import BrainResult, run_cli, estimate_fallback_cost
 
 
 def invoke(prompt: str, cwd: Path, timeout_s: int = 1800, model: str | None = None) -> BrainResult:
-    args = ["codex", "exec", prompt, "--json"]
+    # Prompt via STDIN ("-" placeholder): cmd.exe wrappers mangle multiline args.
+    args = ["codex", "exec", "--json", "-"]
     if model:
-        args += ["--model", model]
-    rc, out, err, dur = run_cli(args, cwd, timeout_s)
+        args = ["codex", "exec", "--json", "--model", model, "-"]
+    rc, out, err, dur = run_cli(args, cwd, timeout_s, input_text=prompt)
 
     if rc == -1:
         return BrainResult("timeout", out or err, 0.0, model or "codex-default", dur)

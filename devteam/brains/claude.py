@@ -13,10 +13,13 @@ from . import BrainResult, run_cli, estimate_fallback_cost
 
 
 def invoke(prompt: str, cwd: Path, timeout_s: int = 1800, model: str | None = None) -> BrainResult:
-    args = ["claude", "-p", prompt, "--output-format", "json"]
+    # Prompt goes via STDIN: npm .cmd wrappers route args through cmd.exe,
+    # which mangles multiline arguments (verified 2026-06-12). `claude -p`
+    # reads the prompt from stdin when no positional prompt is given.
+    args = ["claude", "-p", "--output-format", "json"]
     if model:
         args += ["--model", model]
-    rc, out, err, dur = run_cli(args, cwd, timeout_s)
+    rc, out, err, dur = run_cli(args, cwd, timeout_s, input_text=prompt)
 
     if rc == -1:
         return BrainResult("timeout", out or err, 0.0, model or "claude-default", dur)

@@ -34,6 +34,9 @@ def run_phase(project: Project) -> PhaseOutcome:
         return PhaseOutcome(project.state, None, None, None, "proyecto pausado")
 
     phase = project.state
+    if project.phase_completed and project.requires_human_checkpoint():
+        return PhaseOutcome(phase, None, None, project.requires_human_checkpoint(),
+                            "fase ya completada; esperando aprobación humana")
     if phase == "clarification":
         return PhaseOutcome(phase, None, None,
                             "responder a las preguntas de clarificación en el hilo",
@@ -70,6 +73,8 @@ def run_phase(project: Project) -> PhaseOutcome:
 
     checkpoint = project.requires_human_checkpoint()
     if checkpoint:
+        project.phase_completed = True
+        project.save()
         milestone(project.discord_channel,
                   f"Proyecto {project.name}: fase **{phase}** completada. "
                   f"CHECKPOINT: {checkpoint}. Usa `devteam approve {project.name}` (o di 'aprobado' en el hilo).")

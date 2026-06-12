@@ -100,9 +100,18 @@ def cmd_approve(args) -> int:
     return 0
 
 
+def cmd_tick(args) -> int:
+    """Run a single daemon step (useful for cron/testing)."""
+    from .daemon import tick
+    r = tick()
+    print(f"acted_on={r.acted_on} note={r.note!r}")
+    return 0
+
+
 def cmd_daemon(args) -> int:
-    print("daemon: not implemented yet (M4b). See build/03-build-roadmap.md")
-    return 2
+    from .daemon import loop
+    loop(interval_s=args.interval)
+    return 0
 
 
 def main(argv=None) -> int:
@@ -146,7 +155,11 @@ def main(argv=None) -> int:
     p.add_argument("name")
     p.set_defaults(fn=cmd_approve)
 
-    p = sub.add_parser("daemon", help="24/7 loop (Fase 2)")
+    p = sub.add_parser("tick", help="run one daemon step")
+    p.set_defaults(fn=cmd_tick)
+
+    p = sub.add_parser("daemon", help="24/7 loop")
+    p.add_argument("--interval", type=int, default=60)
     p.set_defaults(fn=cmd_daemon)
 
     args = ap.parse_args(argv)

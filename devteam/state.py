@@ -28,6 +28,7 @@ class Project:
     path: Path
     state: str = "new"
     paused: bool = False
+    phase_completed: bool = False   # current phase's task done, awaiting checkpoint
     budget_cap_usd: float = config.DEFAULT_BUDGET_CAP_USD
     spent_usd: float = 0.0
     discord_channel: str = ""   # e.g. "discord:123456" or "discord:123:thread456"
@@ -52,6 +53,7 @@ class Project:
             "path": str(self.path),
             "state": self.state,
             "paused": self.paused,
+            "phase_completed": self.phase_completed,
             "budget_cap_usd": self.budget_cap_usd,
             "spent_usd": round(self.spent_usd, 6),
             "discord_channel": self.discord_channel,
@@ -69,6 +71,7 @@ class Project:
             path=Path(data["path"]),
             state=data["state"],
             paused=data.get("paused", False),
+            phase_completed=data.get("phase_completed", False),
             budget_cap_usd=data.get("budget_cap_usd", config.DEFAULT_BUDGET_CAP_USD),
             spent_usd=data.get("spent_usd", 0.0),
             discord_channel=data.get("discord_channel", ""),
@@ -87,6 +90,7 @@ class Project:
             )
         self.history.append({"ts": _now(), "from": self.state, "to": to_state, "note": note})
         self.state = to_state
+        self.phase_completed = False   # entering a fresh phase
         self.save()
 
     def pause(self, note: str = "") -> None:

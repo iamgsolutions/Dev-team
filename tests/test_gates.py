@@ -29,15 +29,16 @@ def test_failing_gate_blocks(tmp_path):
 def test_missing_tool_is_skipped_not_failed(tmp_path):
     write_gates(tmp_path, [{"name": "ghost", "cmd": ["tool-that-does-not-exist-xyz"]}])
     rep = run_gates(tmp_path)
-    assert rep.passed            # nothing actually ran -> no hard fail
-    assert rep.checks[0].skipped
+    assert rep.passed            # ghost skipped; built-in secrets gate passes
+    ghost = next(c for c in rep.checks if c.name == "ghost")
+    assert ghost.skipped
     assert "ghost:SKIP" in rep.summary()
 
 
-def test_no_gates_passes_with_note(tmp_path):
+def test_no_custom_gates_still_runs_secrets(tmp_path):
     rep = run_gates(tmp_path)
     assert rep.passed
-    assert "no gates" in rep.summary()
+    assert "secrets:PASS" in rep.summary()   # built-in gate always present
 
 
 def test_python_defaults_detected(tmp_path):

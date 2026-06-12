@@ -39,6 +39,9 @@ def run_cli(
             args,
             cwd=str(cwd),
             input=input_text,
+            # CRITICAL: without DEVNULL stdin, CLIs like opencode wait forever
+            # for a TTY in headless mode (verified on Windows, 2026-06-12).
+            stdin=(None if input_text is not None else subprocess.DEVNULL),
             capture_output=True,
             text=True,
             encoding="utf-8",

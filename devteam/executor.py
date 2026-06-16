@@ -146,6 +146,11 @@ def execute_task(
         from . import reflective
         reflective.record(result.model, rt.brain, result.status, note=f"{role}: {task[:50]}")
 
+        from . import eventlog
+        eventlog.record("task", project.name, role=role, brain=rt.brain,
+                        model=result.model, status=result.status,
+                        cost=round(result.cost_usd, 4))
+
         return TaskResult(result.status, rt.brain, result.model, result.cost_usd,
                           result.output, branch, rt.justification, str(wt_path))
     finally:

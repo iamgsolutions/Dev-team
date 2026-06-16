@@ -162,6 +162,28 @@ def cmd_skills(args) -> int:
     return 0
 
 
+def cmd_catalog(args) -> int:
+    from . import catalog
+    if args.add:
+        comp = catalog.register(
+            name=args.add, summary=args.summary or "",
+            capabilities=(args.caps or "").split(",") if args.caps else [],
+            stack=args.stack or "", origin_project=args.origin or "")
+        print(f"registrado: {comp['name']}")
+    elif args.use:
+        catalog.mark_used(args.use, args.project or "")
+        print(f"marcado usado: {args.use} en {args.project}")
+    else:
+        print(catalog.format_report(args.search))
+    return 0
+
+
+def cmd_log(args) -> int:
+    from . import eventlog
+    print(eventlog.format_tail(args.n, args.project))
+    return 0
+
+
 def cmd_panel(args) -> int:
     """One-screen control panel for the director/human."""
     from .state import Project, registry_load
@@ -194,6 +216,10 @@ def cmd_panel(args) -> int:
 
     print("\nSCORECARD DE MODELOS")
     print("  " + reflective.format_report().replace("\n", "\n  "))
+
+    from . import catalog
+    n_comp = len(catalog.all_components())
+    print(f"\nCATÁLOGO REUTILIZABLE: {n_comp} componente(s)  ·  EVENTOS recientes: `devteam log`")
 
     print("\nSALUD DEL SISTEMA")
     from .doctor import run_doctor
@@ -296,6 +322,19 @@ def main(argv=None) -> int:
     p = sub.add_parser("skills", help="list skills / show a role's pack")
     p.add_argument("--role")
     p.set_defaults(fn=cmd_skills)
+
+    p = sub.add_parser("catalog", help="reusable component catalog (SAA / ADR-010)")
+    p.add_argument("--search", help="find components by capability/name")
+    p.add_argument("--add", help="register a component by name")
+    p.add_argument("--summary"); p.add_argument("--caps", help="comma-separated capabilities")
+    p.add_argument("--stack"); p.add_argument("--origin", help="origin project")
+    p.add_argument("--use", help="mark a component used"); p.add_argument("--project")
+    p.set_defaults(fn=cmd_catalog)
+
+    p = sub.add_parser("log", help="engine event log (flight recorder)")
+    p.add_argument("-n", type=int, default=40)
+    p.add_argument("--project")
+    p.set_defaults(fn=cmd_log)
 
     p = sub.add_parser("panel", help="one-screen control panel")
     p.set_defaults(fn=cmd_panel)

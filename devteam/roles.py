@@ -47,18 +47,29 @@ def pm_task(project: Project) -> PhaseTask:
 
 
 def architect_task(project: Project) -> PhaseTask:
+    from . import catalog
+    comps = catalog.all_components()
+    catalog_ctx = ""
+    if comps:
+        catalog_ctx = ("\n\n=== CATÁLOGO DE COMPONENTES REUTILIZABLES DEL EQUIPO ===\n"
+                       + catalog.format_report()
+                       + "\nReutiliza lo que aplique a este proyecto antes de diseñar nada nuevo.")
     return PhaseTask(
         role="architect",
         task=(
             "Como Architect: lee ./docs/PRD.md y ./docs/STANDARDS.md (los estándares del "
             "equipo: estructura, reglas de código, seguridad, tests — son OBLIGATORIOS, "
-            "no inventes otra organización). Decide la arquitectura con best practices. "
+            "no inventes otra organización). Si el sistema te ha pasado un CATÁLOGO de "
+            "componentes reutilizables en el contexto, REUTILIZA lo que aplique (no "
+            "rehagas auth, pagos, paneles si ya existen) y anótalo en docs/architecture.md "
+            "('componentes reutilizados'). Decide la arquitectura con best practices. "
             "Produce: ./docs/architecture.md (stack elegido y por qué, estructura de carpetas, "
             "decisiones tipo ADR), ./docs/api-contract.md (TODOS los endpoints: ruta, método, "
             "request/response JSON, códigos de error) y ./docs/data-model.md (entidades, campos, "
             "relaciones, migración inicial). Stack por defecto del equipo: backend Python/FastAPI "
             "o Node/TypeScript (elige el que mejor encaje y justifica), frontend Next.js+React+TS, "
             "base de datos Postgres. Documentación en español; identificadores de código en inglés."
+            + catalog_ctx
         ),
         acceptance_criteria=[
             "existen architecture.md, api-contract.md y data-model.md en ./docs/",

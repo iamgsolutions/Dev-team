@@ -16,6 +16,7 @@ from .executor import TaskResult, execute_task
 from .roles import PHASE_TASKS
 from .state import Project
 from .storage import redact
+from . import eventlog
 
 NEXT_AFTER_QA_OK = "deploy"
 
@@ -100,6 +101,8 @@ def run_phase(project: Project) -> PhaseOutcome:
         # QUALITY GATES before merge (spec R5: nada avanza sin pasar gates)
         if result.worktree:
             report = run_gates(_P(result.worktree))
+            eventlog.record("gate", project.name, phase=phase,
+                            passed=report.passed, summary=report.summary()[:120])
             if not report.passed:
                 reflective.record(result.model, result.brain, "gate_failed",
                                   note=f"{phase}: {report.summary()[:60]}")
@@ -114,6 +117,8 @@ def run_phase(project: Project) -> PhaseOutcome:
                 verdict = audit_worktree(_P(result.worktree), author_model=result.model,
                                          context=f"fase {phase} del proyecto {project.name}",
                                          critical=spec.critical)
+                eventlog.record("audit", project.name, phase=phase,
+                                approved=verdict.approved, voters=len(verdict.votes))
                 if not verdict.approved:
                     reflective.record(result.model, result.brain, "audit_rejected",
                                       note=f"{phase}")
@@ -127,6 +132,7 @@ def run_phase(project: Project) -> PhaseOutcome:
         # pausing left the project actionable, so the daemon re-ran the failing
         # phase every tick forever, draining budget and premium rations).
         project.pause(f"cascada agotada en fase {phase} tras {_cfg.MAX_TASK_RETRIES} intentos")
+        eventlog.record("escalate", project.name, phase=phase, reason="cascade_exhausted")
         blocker(project.discord_channel,
                 f"Proyecto {project.name} · fase {phase}: agotados {_cfg.MAX_TASK_RETRIES} "
                 f"intentos de autocorrección → proyecto PAUSADO. Último fallo: "
@@ -165,6 +171,8 @@ def run_phase(project: Project) -> PhaseOutcome:
 
     nxt = _next_state(project)
     project.transition(nxt, f"fase {phase} completada (auto)")
+    eventlog.record("phase", project.name, **{"from": phase, "to": nxt,
+                    "spent": round(project.spent_usd, 2)})
     milestone(project.discord_channel,
               f"Proyecto {project.name}: fase **{phase}** completada → **{nxt}**. "
               f"Gasto: ${project.spent_usd:.2f}/${project.budget_cap_usd:.0f}.")

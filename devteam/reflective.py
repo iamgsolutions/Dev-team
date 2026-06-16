@@ -86,6 +86,33 @@ def benched_models() -> list[str]:
     return list(_load()["benched"])
 
 
+# Auto-bench thresholds: judge only with enough evidence, bench sustained losers.
+AUTO_BENCH_MIN_TASKS = 8
+AUTO_BENCH_MAX_RATE = 0.40      # < 40% success over the window -> bench
+# Premium subscription brains are NEVER auto-benched (rate limits look like
+# failures and we don't want to bench a paid brain over a transient window).
+AUTO_BENCH_PROTECTED = {"claude", "codex", "gemini"}
+
+
+def auto_bench() -> list[str]:
+    """Bench models with sustained low success (>= MIN tasks, < MAX rate).
+    Returns the models newly benched. Premium brains are protected."""
+    d = _load()
+    newly: list[str] = []
+    for model, m in d["models"].items():
+        if model in d["benched"] or m.get("brain") in AUTO_BENCH_PROTECTED:
+            continue
+        ok = m["events"].get(GOOD, 0)
+        bad = sum(m["events"].get(e, 0) for e in BAD_EVENTS)
+        total = ok + bad
+        if total >= AUTO_BENCH_MIN_TASKS and (ok / total) < AUTO_BENCH_MAX_RATE:
+            d["benched"].append(model)
+            newly.append(model)
+    if newly:
+        _save(d)
+    return newly
+
+
 def format_report() -> str:
     d = _load()
     if not d["models"]:

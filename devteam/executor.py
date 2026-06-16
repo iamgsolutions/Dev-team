@@ -87,9 +87,10 @@ def execute_task(
         gates=gates or ["el código debe ejecutar sin errores"],
         memory_updates=memory_update_spec(),
     )
-    # pre-installed role knowledge (skill pack) - senior craft for every agent
+    # pre-installed role knowledge (skill pack) - senior craft for every agent,
+    # tailored to the project type (web/api/mobile)
     from .skillpack import load_for_role
-    instr.skills_pack = load_for_role(role)
+    instr.skills_pack = load_for_role(role, getattr(project, "project_type", None))
     prompt = instr.build()  # raises MalformedInstruction if blocks missing
 
     wt_path, branch = worktree.create(project.path, f"{role}-{task[:30]}")

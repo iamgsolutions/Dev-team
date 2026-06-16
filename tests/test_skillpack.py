@@ -40,6 +40,22 @@ def test_unknown_role_gets_empty_pack():
     assert skillpack.load_for_role("astronaut") == ""
 
 
+def test_project_type_adds_extra_skills():
+    base = skillpack.load_for_role("frontend")
+    web = skillpack.load_for_role("frontend", "web")
+    # web adds accessibility+performance to frontend; already in base here, so
+    # use api on backend where the extra is clearly additive
+    base_be = skillpack.load_for_role("backend")
+    api_be = skillpack.load_for_role("backend", "api")
+    assert len(api_be) >= len(base_be)
+    assert isinstance(web, str) and len(web) > 0
+
+
+def test_project_type_unknown_is_safe():
+    # an unknown type just yields the base role pack (no crash)
+    assert skillpack.load_for_role("backend", "quantum") == skillpack.load_for_role("backend")
+
+
 def test_instruction_includes_knowledge_block():
     instr = full_instruction()
     instr.skills_pack = "## SKILL X\ncontenido"

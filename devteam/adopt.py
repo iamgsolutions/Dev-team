@@ -84,10 +84,12 @@ def adopt_project(
     if not (path / "docs" / "STANDARDS.md").exists():
         write_standards(path)
 
+    from .intake import detect_project_type
     project = Project(
         name=name, path=path,
         budget_cap_usd=cap if cap is not None else config.DEFAULT_BUDGET_CAP_USD,
         discord_channel=discord_channel,
+        project_type=detect_project_type(_seed_summary(path)),
     )
     project.state = initial_state if initial_state in config.STATES else "qa"
     project.history.append({"event": "adopted", "note": f"estado inicial {project.state}"})

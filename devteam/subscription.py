@@ -125,7 +125,10 @@ def status() -> dict:
         b = _brain_state(state, brain)
         cooling = False
         if b["cooldown_until"]:
-            cooling = _now() < datetime.fromisoformat(b["cooldown_until"])
+            try:
+                cooling = _now() < datetime.fromisoformat(b["cooldown_until"])
+            except (ValueError, TypeError):
+                cooling = False
         out[brain] = {
             "calls_today": b["calls"],
             "daily_budget": b["daily_budget"],

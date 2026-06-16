@@ -39,10 +39,13 @@ def invoke(prompt: str, cwd: Path, timeout_s: int = 1800, model: str | None = No
         except json.JSONDecodeError:
             continue
         events.append(ev)
-        # token usage events (defensive: several historical shapes)
+        # token usage events (defensive: several historical shapes + values)
         usage = ev.get("usage") or (ev.get("msg") or {}).get("usage") or {}
-        tokens_in += int(usage.get("input_tokens", 0) or 0)
-        tokens_out += int(usage.get("output_tokens", 0) or 0)
+        try:
+            tokens_in += int(float(usage.get("input_tokens", 0) or 0))
+            tokens_out += int(float(usage.get("output_tokens", 0) or 0))
+        except (ValueError, TypeError):
+            pass   # malformed usage on one line must not crash the whole parse
         # final agent message (several historical shapes)
         item = ev.get("item") or {}
         if item.get("type") in ("agent_message", "assistant_message"):

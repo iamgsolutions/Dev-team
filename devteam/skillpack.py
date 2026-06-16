@@ -28,15 +28,30 @@ ROLE_SKILLS: dict[str, list[str]] = {
     "deploy": ["devops", "observability", "security"],
 }
 
+# Second dimension: per project TYPE, extra skills layered on the role pack so
+# the injected knowledge is always pertinent to what's being built (Auditor 4's
+# top architectural rec). The role pack is the base; these are additive.
+PROJECT_TYPE_SKILLS: dict[str, dict[str, list[str]]] = {
+    "web":    {"frontend": ["accessibility", "performance"], "architect": ["performance"]},
+    "api":    {"backend": ["api-design", "performance", "observability"],
+               "architect": ["api-design", "performance"]},
+    "mobile": {"frontend": ["performance"], "architect": ["performance"]},
+}
 
-def load_for_role(role: str) -> str:
-    """Compose the knowledge pack for a role. Empty string if none defined.
+
+def load_for_role(role: str, project_type: str | None = None) -> str:
+    """Compose the knowledge pack for a role (+ project-type extras + lessons).
 
     Appends the role's accumulated LESSONS (skills/<role>-lessons.md) when
     present - the learning loop: failures distilled by the director become
     permanent craft for that role (closes reflective <-> skills)."""
     role = role.lower()
     names = list(ROLE_SKILLS.get(role, []))
+    # project-type extras (deduped, preserving order)
+    if project_type:
+        for extra in PROJECT_TYPE_SKILLS.get(project_type.lower(), {}).get(role, []):
+            if extra not in names:
+                names.append(extra)
     lessons = SKILLS_DIR / f"{role}-lessons.md"
     if lessons.exists():
         names.append(f"{role}-lessons")

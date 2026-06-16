@@ -162,6 +162,49 @@ def cmd_skills(args) -> int:
     return 0
 
 
+def cmd_panel(args) -> int:
+    """One-screen control panel for the director/human."""
+    from .state import Project, registry_load
+    from .subscription import status as substatus
+    from . import reflective
+
+    print("=" * 64)
+    print(" PANEL DEL EQUIPO DE DESARROLLO — MG Solutions")
+    print("=" * 64)
+
+    reg = registry_load()
+    print("\nPROYECTOS")
+    if not reg["projects"]:
+        print("  (ninguno)")
+    for name, path in reg["projects"].items():
+        try:
+            p = Project.load(Path(path))
+            flag = " [PAUSADO]" if p.paused else ""
+            wait = " ⏳esperando-OK" if (p.phase_completed and p.requires_human_checkpoint()) else ""
+            pct = (p.spent_usd / p.budget_cap_usd * 100) if p.budget_cap_usd else 0
+            print(f"  {name:<20} {p.state:<13} {p.project_type:<7} "
+                  f"${p.spent_usd:.2f}/${p.budget_cap_usd:.0f} ({pct:.0f}%){flag}{wait}")
+        except Exception as e:  # noqa: BLE001
+            print(f"  {name:<20} (illegible: {e})")
+
+    print("\nRACIONES PREMIUM (hoy)")
+    for brain, v in substatus().items():
+        rest = "" if v["available"] else (" DESCANSANDO" if v["cooling_down"] else " RACIÓN AGOTADA")
+        print(f"  {brain:<8} {v['calls_today']}/{v['daily_budget']} llamadas{rest}")
+
+    print("\nSCORECARD DE MODELOS")
+    print("  " + reflective.format_report().replace("\n", "\n  "))
+
+    print("\nSALUD DEL SISTEMA")
+    from .doctor import run_doctor
+    checks = run_doctor()
+    bad = [c for c in checks if not c.ok]
+    print(f"  {len(checks)-len(bad)}/{len(checks)} OK" +
+          ("" if not bad else "  ·  PROBLEMAS: " + ", ".join(c.name for c in bad)))
+    print("=" * 64)
+    return 0
+
+
 def cmd_tick(args) -> int:
     """Run a single daemon step (useful for cron/testing)."""
     from .daemon import tick
@@ -253,6 +296,9 @@ def main(argv=None) -> int:
     p = sub.add_parser("skills", help="list skills / show a role's pack")
     p.add_argument("--role")
     p.set_defaults(fn=cmd_skills)
+
+    p = sub.add_parser("panel", help="one-screen control panel")
+    p.set_defaults(fn=cmd_panel)
 
     p = sub.add_parser("tick", help="run one daemon step")
     p.set_defaults(fn=cmd_tick)

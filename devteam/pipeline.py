@@ -71,7 +71,8 @@ def run_phase(project: Project) -> PhaseOutcome:
 
     result: TaskResult | None = None
     failure_feedback = ""
-    for attempt in range(1, _cfg.MAX_TASK_RETRIES + 1):
+    max_attempts = max(1, _cfg.MAX_TASK_RETRIES)   # never silently disable execution
+    for attempt in range(1, max_attempts + 1):
         task_text = spec.task if not failure_feedback else (
             spec.task
             + f"\n\nCORRECCIÓN (intento {attempt}): tu trabajo anterior en este mismo "

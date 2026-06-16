@@ -83,6 +83,16 @@ def extract_budget_cap(brief_text: str) -> float:
     return config.DEFAULT_BUDGET_CAP_USD
 
 
+def detect_project_type(text: str) -> str:
+    """Infer web | api | mobile from the brief (drives project-type skills)."""
+    low = text.lower()
+    if re.search(r"\bapp m[oó]vil|react native|expo|android|ios|aplicaci[oó]n m[oó]vil|móvil\b", low):
+        return "mobile"
+    if re.search(r"\b(api|backend) (rest|pura|sola)|solo (api|backend)|microservicio\b", low):
+        return "api"
+    return "web"
+
+
 def new_project(
     brief_path: Path,
     name: str | None = None,
@@ -123,6 +133,7 @@ def new_project(
     questions = validate_brief(brief_text)
     project = Project(
         name=name, path=project_path, budget_cap_usd=cap, discord_channel=discord_channel,
+        project_type=detect_project_type(brief_text),
     )
     project.save()
     if questions:

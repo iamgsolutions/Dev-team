@@ -33,6 +33,7 @@ class Project:
     spent_usd: float = 0.0
     discord_channel: str = ""   # e.g. "discord:123456" or "discord:123:thread456"
     last_discord_msg_id: str = ""   # listener cursor (no double-processing)
+    project_type: str = "web"   # web | api | mobile -> extra role skills
     repo: str = ""              # e.g. "iamgsolutions/notes"
     created: str = field(default_factory=_now)
     history: list[dict] = field(default_factory=list)
@@ -59,6 +60,7 @@ class Project:
             "spent_usd": round(self.spent_usd, 6),
             "discord_channel": self.discord_channel,
             "last_discord_msg_id": self.last_discord_msg_id,
+            "project_type": self.project_type,
             "repo": self.repo,
             "created": self.created,
             "history": self.history,
@@ -79,6 +81,7 @@ class Project:
             spent_usd=data.get("spent_usd", 0.0),
             discord_channel=data.get("discord_channel", ""),
             last_discord_msg_id=data.get("last_discord_msg_id", ""),
+            project_type=data.get("project_type", "web"),
             repo=data.get("repo", ""),
             created=data.get("created", _now()),
             history=data.get("history", []),

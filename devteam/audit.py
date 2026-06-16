@@ -34,19 +34,19 @@ class AuditReport:
 
 
 def _diff_of(worktree: Path, max_chars: int = 60_000) -> str:
-    proc = subprocess.run(
-        ["git", "-C", str(worktree), "diff", "main...HEAD", "--unified=3"],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
-        stdin=subprocess.DEVNULL,
-    )
-    diff = proc.stdout or ""
+    def _run(args: list[str]) -> str:
+        try:
+            proc = subprocess.run(
+                ["git", "-C", str(worktree), *args],
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                stdin=subprocess.DEVNULL, timeout=60,
+            )
+            return proc.stdout or ""
+        except subprocess.TimeoutExpired:
+            return ""
+    diff = _run(["diff", "main...HEAD", "--unified=3"])
     if not diff.strip():
-        proc = subprocess.run(  # uncommitted work
-            ["git", "-C", str(worktree), "diff", "--unified=3"],
-            capture_output=True, text=True, encoding="utf-8", errors="replace",
-            stdin=subprocess.DEVNULL,
-        )
-        diff = proc.stdout or ""
+        diff = _run(["diff", "--unified=3"])   # uncommitted work
     return diff[:max_chars]
 
 

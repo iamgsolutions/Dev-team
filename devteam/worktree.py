@@ -10,11 +10,17 @@ class GitError(Exception):
     pass
 
 
-def _git(repo: Path, *args: str) -> str:
-    proc = subprocess.run(
-        ["git", "-C", str(repo), *args],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
-    )
+def _git(repo: Path, *args: str, timeout: int = 120) -> str:
+    # timeout (audit fix): a hung git (stale index.lock, slow disk) would
+    # otherwise freeze the single-threaded 24/7 daemon forever.
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(repo), *args],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            stdin=subprocess.DEVNULL, timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        raise GitError(f"git {' '.join(args)} timed out after {timeout}s")
     if proc.returncode != 0:
         raise GitError(f"git {' '.join(args)} failed: {proc.stderr.strip()}")
     return proc.stdout.strip()
@@ -89,3 +95,11 @@ def merge_branch(repo: Path, branch: str, message: str | None = None) -> None:
     if message:
         args += ["-m", message]
     _git(repo, *args)
+
+
+def delete_branch(repo: Path, branch: str) -> None:
+    """Delete a (merged) branch so a same-named phase re-run can recreate it."""
+    try:
+        _git(repo, "branch", "-D", branch)
+    except GitError:
+        pass

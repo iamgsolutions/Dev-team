@@ -142,6 +142,26 @@ def cmd_doctor(args) -> int:
     return 0 if all(c.ok for c in checks) else 1
 
 
+def cmd_learn(args) -> int:
+    """Teach a role a lesson (learning loop: failure -> permanent craft)."""
+    from .skillpack import append_lesson
+    f = append_lesson(args.role, args.lesson)
+    print(f"lección añadida al rol {args.role}: {f}")
+    return 0
+
+
+def cmd_skills(args) -> int:
+    from .skillpack import available_skills, ROLE_SKILLS, load_for_role
+    if args.role:
+        print(load_for_role(args.role))
+    else:
+        print("skills disponibles:", ", ".join(available_skills()))
+        print("\nmapeo rol -> skills:")
+        for role, names in ROLE_SKILLS.items():
+            print(f"  {role:<10} {', '.join(names)}")
+    return 0
+
+
 def cmd_tick(args) -> int:
     """Run a single daemon step (useful for cron/testing)."""
     from .daemon import tick
@@ -224,6 +244,15 @@ def main(argv=None) -> int:
 
     p = sub.add_parser("doctor", help="harness health check (no token spend)")
     p.set_defaults(fn=cmd_doctor)
+
+    p = sub.add_parser("learn", help="teach a role a lesson (learning loop)")
+    p.add_argument("--role", required=True)
+    p.add_argument("lesson")
+    p.set_defaults(fn=cmd_learn)
+
+    p = sub.add_parser("skills", help="list skills / show a role's pack")
+    p.add_argument("--role")
+    p.set_defaults(fn=cmd_skills)
 
     p = sub.add_parser("tick", help="run one daemon step")
     p.set_defaults(fn=cmd_tick)

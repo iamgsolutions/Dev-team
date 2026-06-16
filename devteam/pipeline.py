@@ -15,6 +15,7 @@ from .discord_bridge import blocker, milestone
 from .executor import TaskResult, execute_task
 from .roles import PHASE_TASKS
 from .state import Project
+from .storage import redact
 
 NEXT_AFTER_QA_OK = "deploy"
 
@@ -41,9 +42,19 @@ def run_phase(project: Project) -> PhaseOutcome:
         return PhaseOutcome(phase, None, None,
                             "responder a las preguntas de clarificación en el hilo",
                             "esperando respuestas del humano al brief")
+    # 'review' = human acceptance gate (no agent task): present it once and wait
+    if phase == "review":
+        project.phase_completed = True
+        project.save()
+        milestone(project.discord_channel,
+                  f"Proyecto {project.name}: LISTO para tu aceptación. Revisa la entrega "
+                  f"(demo + reporte) y escribe `aprobado` en el hilo para cerrarlo, o "
+                  f"`directriz:` con cambios.")
+        return PhaseOutcome(phase, None, None, "Entrega aceptada por el humano",
+                            "esperando aceptación final del humano")
     if phase not in PHASE_TASKS:
         return PhaseOutcome(phase, None, None, None,
-                            f"fase {phase!r} no ejecutable por el pipeline (deploy/review/done: M6)")
+                            f"fase {phase!r} no ejecutable por el pipeline")
 
     spec = PHASE_TASKS[phase](project)
 
@@ -111,21 +122,36 @@ def run_phase(project: Project) -> PhaseOutcome:
 
         break  # ok + gates + audit -> done
     else:
-        # cascade exhausted -> escalate to Hermes/human (Discord blocker)
+        # cascade exhausted -> PAUSE the project and escalate (audit fix: not
+        # pausing left the project actionable, so the daemon re-ran the failing
+        # phase every tick forever, draining budget and premium rations).
+        project.pause(f"cascada agotada en fase {phase} tras {_cfg.MAX_TASK_RETRIES} intentos")
         blocker(project.discord_channel,
                 f"Proyecto {project.name} · fase {phase}: agotados {_cfg.MAX_TASK_RETRIES} "
-                f"intentos de autocorrección. Último fallo: {failure_feedback[:400]} "
-                f"Trabajo en rama {result.branch if result else '?'} sin mergear. Necesito dirección.")
+                f"intentos de autocorrección → proyecto PAUSADO. Último fallo: "
+                f"{redact(failure_feedback[:400])} Trabajo en rama "
+                f"{result.branch if result else '?'} sin mergear. Reanuda con `reanuda` "
+                f"o da una `directriz:` en el hilo cuando lo redirijas.")
         return PhaseOutcome(phase, result, None, None,
-                            f"cascada agotada tras {_cfg.MAX_TASK_RETRIES} intentos: {failure_feedback[:300]}")
+                            f"cascada agotada tras {_cfg.MAX_TASK_RETRIES} intentos (proyecto pausado): "
+                            f"{failure_feedback[:300]}")
 
-    # merge the phase branch into main (gates passed)
+    # merge the phase branch into main (gates passed), then REMOVE the worktree
+    # (audit fix: worktrees were never cleaned -> a QA bounce-back reused a stale
+    # already-merged worktree, and they piled up on disk). After removal, a
+    # re-run of the same phase gets a fresh worktree off current main.
     if result.branch:
         try:
             worktree.merge_branch(project.path, result.branch,
                                   f"merge({phase}): {result.branch}")
         except worktree.GitError as e:
             return PhaseOutcome(phase, result, None, None, f"merge falló: {e}")
+        if result.worktree:
+            try:
+                worktree.remove(project.path, _P(result.worktree), force=True)
+            except worktree.GitError:
+                pass   # cleanup is best-effort; never block on it
+        worktree.delete_branch(project.path, result.branch)  # allow same-name re-run
 
     checkpoint = project.requires_human_checkpoint()
     if checkpoint:

@@ -29,18 +29,17 @@ def _path() -> Path:
 
 
 def _load() -> dict:
-    p = _path()
-    if p.exists():
-        try:
-            return json.loads(p.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            pass
-    return {"models": {}, "benched": []}
+    from .storage import load_json_safe
+    d = load_json_safe(_path(), {"models": {}, "benched": []})
+    d.setdefault("models", {})
+    d.setdefault("benched", [])
+    return d
 
 
 def _save(d: dict) -> None:
+    from .storage import atomic_write_json
     config.ensure_dirs()
-    _path().write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
+    atomic_write_json(_path(), d)
 
 
 def record(model: str, brain: str, event: str, note: str = "") -> None:

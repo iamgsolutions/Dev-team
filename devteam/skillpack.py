@@ -15,27 +15,38 @@ SKILLS_DIR = Path(__file__).parent / "skills"
 MAX_PACK_CHARS = 9000   # keep instructions lean; files are written compact
 
 # role -> ordered skill files (first = most important, kept under truncation)
+# audit fixes: qa now gets `testing`; frontend gets `security` (XSS/CSRF/auth);
+# `deploy` role added (was an orphan phase). New craft skills wired in.
 ROLE_SKILLS: dict[str, list[str]] = {
-    "pm": ["pm", "product-quality"],
-    "architect": ["architect", "security", "api-design"],
-    "backend": ["backend", "python", "testing", "security"],
-    "frontend": ["frontend", "typescript", "testing"],
-    "qa": ["qa", "debugging", "api-design"],
-    "review": ["review", "security"],
-    "audit": ["review", "security"],
+    "pm": ["pm", "product-quality", "data-privacy"],
+    "architect": ["architect", "security", "api-design", "database", "performance"],
+    "backend": ["backend", "python", "testing", "security", "database", "observability"],
+    "frontend": ["frontend", "typescript", "testing", "security", "accessibility", "performance"],
+    "qa": ["qa", "testing", "debugging", "api-design"],
+    "review": ["review", "security", "code-style"],
+    "audit": ["review", "security", "code-style"],
+    "deploy": ["devops", "observability", "security"],
 }
 
 
 def load_for_role(role: str) -> str:
-    """Compose the knowledge pack for a role. Empty string if none defined."""
-    names = ROLE_SKILLS.get(role.lower(), [])
+    """Compose the knowledge pack for a role. Empty string if none defined.
+
+    Appends the role's accumulated LESSONS (skills/<role>-lessons.md) when
+    present - the learning loop: failures distilled by the director become
+    permanent craft for that role (closes reflective <-> skills)."""
+    role = role.lower()
+    names = list(ROLE_SKILLS.get(role, []))
+    lessons = SKILLS_DIR / f"{role}-lessons.md"
+    if lessons.exists():
+        names.append(f"{role}-lessons")
     parts: list[str] = []
     total = 0
     for name in names:
         f = SKILLS_DIR / f"{name}.md"
         if not f.exists():
             continue
-        text = f.read_text(encoding="utf-8").strip()
+        text = f.read_text(encoding="utf-8", errors="replace").strip()
         if total + len(text) > MAX_PACK_CHARS:
             remaining = MAX_PACK_CHARS - total
             if remaining < 400:
@@ -48,3 +59,22 @@ def load_for_role(role: str) -> str:
 
 def available_skills() -> list[str]:
     return sorted(p.stem for p in SKILLS_DIR.glob("*.md"))
+
+
+def append_lesson(role: str, lesson: str) -> Path:
+    """Add a distilled lesson to a role's lessons file (learning loop).
+
+    The director calls this when a failure pattern repeats (from qa-report /
+    audit). It becomes permanent craft injected into that role's pack from then
+    on. Kept compact (lessons file is capped at load time by MAX_PACK_CHARS)."""
+    from datetime import datetime, timezone
+    role = role.lower()
+    f = SKILLS_DIR / f"{role}-lessons.md"
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if not f.exists():
+        header = (f"# LECCIONES APRENDIDAS — rol {role}\n\n"
+                  "Patrones de fallo destilados de proyectos reales. Evítalos.\n")
+        f.write_text(header, encoding="utf-8")
+    with f.open("a", encoding="utf-8") as fh:
+        fh.write(f"\n- ({stamp}) {lesson.strip()}")
+    return f

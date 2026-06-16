@@ -49,18 +49,15 @@ def _state_path() -> Path:
 
 
 def _load() -> dict:
-    p = _state_path()
-    if p.exists():
-        try:
-            return json.loads(p.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            pass
-    return {}
+    from .storage import load_json_safe
+    d = load_json_safe(_state_path(), {})
+    return d if isinstance(d, dict) else {}
 
 
 def _save(state: dict) -> None:
+    from .storage import atomic_write_json
     config.ensure_dirs()
-    _state_path().write_text(json.dumps(state, indent=2), encoding="utf-8")
+    atomic_write_json(_state_path(), state)
 
 
 def _brain_state(state: dict, brain: str) -> dict:
@@ -87,9 +84,12 @@ def available(brain: str) -> bool:
     b = _brain_state(state, brain)
     _save(state)
     if b["cooldown_until"]:
-        until = datetime.fromisoformat(b["cooldown_until"])
-        if _now() < until:
-            return False
+        try:
+            until = datetime.fromisoformat(b["cooldown_until"])
+            if _now() < until:
+                return False
+        except (ValueError, TypeError):
+            b["cooldown_until"] = None   # corrupt value -> treat as no cooldown
     return b["calls"] < b["daily_budget"]
 
 

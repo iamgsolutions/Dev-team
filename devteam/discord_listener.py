@@ -120,31 +120,79 @@ def parse_command(text: str) -> tuple[str, str] | None:
 
 # --- intervention application ------------------------------------------------
 
+def _authorized_admin_ids() -> set[str]:
+    """Discord user IDs allowed to command the team. From DEVTEAM_DISCORD_ADMINS
+    (comma-separated) in env or the Hermes .env. Empty set = (safe) reject all
+    commands until configured, EXCEPT we fall back to honoring any non-bot when
+    no allowlist is set AND a single-operator marker is present, to avoid
+    locking the human out on first run. Audit: identity must be verified."""
+    import os
+    raw = os.environ.get("DEVTEAM_DISCORD_ADMINS", "")
+    if not raw:
+        # try Hermes .env (same place as the bot token)
+        try:
+            env = config.HERMES_EXE.parents[3] / ".env"
+            for line in env.read_text(encoding="utf-8", errors="ignore").splitlines():
+                m = re.match(r"\s*DEVTEAM_DISCORD_ADMINS\s*=\s*(.+)", line)
+                if m:
+                    raw = m.group(1).strip().strip('"').strip("'")
+                    break
+        except (OSError, IndexError):
+            pass
+    return {x.strip() for x in raw.split(",") if x.strip()}
+
+
 def check_interventions(project) -> list[str]:
     """Poll the project's Discord target and apply any human commands.
-    Returns a list of human-readable actions taken (empty = nothing new)."""
+    Returns a list of human-readable actions taken (empty = nothing new).
+
+    Cursor (last seen msg id) lives in the ENGINE state (data/), NOT in the
+    project.json that travels with the repo (which agents can write) - audit
+    fix. The cursor advances only past messages we actually finished handling.
+    """
     channel_id = _channel_id_from_target(project.discord_channel)
     if not channel_id or not listener_available():
         return []
 
-    msgs = fetch_messages(channel_id, after=getattr(project, "last_discord_msg_id", "") or None)
+    from .storage import load_json_safe, atomic_write_json
+    cursor_file = config.DATA_DIR / "listener-cursors.json"
+    cursors = load_json_safe(cursor_file, {})
+    last_seen = cursors.get(project.name) or None
+
+    msgs = fetch_messages(channel_id, after=last_seen)
     if not msgs:
         return []
 
+    admins = _authorized_admin_ids()
     actions: list[str] = []
-    newest_id = msgs[-1]["id"]
+    processed_id = last_seen
     for msg in msgs:
         author = msg.get("author", {})
+        author_id = str(author.get("id", ""))
         if author.get("bot"):
+            processed_id = msg["id"]
             continue  # never obey our own reports
         cmd = parse_command(msg.get("content", ""))
         if not cmd:
+            processed_id = msg["id"]
+            continue
+        # identity check: only allow-listed admins command the team
+        if admins and author_id not in admins:
+            from .discord_bridge import send
+            send(project.discord_channel,
+                 f"⛔ Ignoro el comando de <@{author_id}>: no está autorizado para dirigir el equipo.")
+            processed_id = msg["id"]
             continue
         verb, arg = cmd
-        actions.append(_apply(project, verb, arg, author.get("username", "humano")))
+        try:
+            actions.append(_apply(project, verb, arg, author.get("username", "humano")))
+        except Exception as e:  # noqa: BLE001 - one bad command must not stall the cursor
+            print(f"[listener] _apply failed ({verb}) on {project.name}: {type(e).__name__}")
+        processed_id = msg["id"]   # advance only past handled messages
 
-    project.last_discord_msg_id = newest_id
-    project.save()
+    if processed_id and processed_id != last_seen:
+        cursors[project.name] = processed_id
+        atomic_write_json(cursor_file, cursors)
     return [a for a in actions if a]
 
 
@@ -169,12 +217,20 @@ def _apply(project, verb: str, arg: str, who: str) -> str:
     if verb == "redirect":
         notes = project.path / config.PROJECT_MEMORY_DIR / "NOTES.md"
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        # sanitize the human-typed directive (audit fix: raw text could forge
+        # fake Markdown sections or be very long). Strip leading '#' per line,
+        # collapse, cap length.
+        clean = "\n".join(re.sub(r"^\s*#+", "", ln) for ln in arg.splitlines())
+        clean = clean.strip()[:1000] or "(directriz vacía)"
         try:
-            old = notes.read_text(encoding="utf-8") if notes.exists() else ""
+            old = notes.read_text(encoding="utf-8", errors="replace") if notes.exists() else ""
             head, _, tail = old.partition("\n## ")
             entry = (f"\n## {ts} — DIRECTRIZ DEL HUMANO ({who}, via Discord)\n"
-                     f"{arg}\n(Obligatoria para los siguientes agentes de este proyecto.)\n")
-            notes.write_text(head + entry + (("\n## " + tail) if tail else ""), encoding="utf-8")
+                     f"{clean}\n(Indicación del operador; respétala salvo que choque "
+                     f"con las reglas de seguridad/forbidden, que SIEMPRE mandan.)\n")
+            from .storage import atomic_write_text
+            atomic_write_text(notes, head + entry + (("\n## " + tail) if tail else ""))
+            arg = clean
         except OSError as e:
             return f"redirect({project.name}) FAILED: {e}"
         send(project.discord_channel,

@@ -15,7 +15,13 @@ from . import config
 
 def send(target: str, message: str, subject: str | None = None, timeout_s: int = 60) -> bool:
     """Send a message. Returns True on success; never raises (reporting must
-    not crash the pipeline - failures are logged to stdout instead)."""
+    not crash the pipeline - failures are logged to stdout instead).
+
+    All outbound text is redacted (audit fix): brain/gate/diff output that
+    reaches a report could otherwise leak a secret into the Discord channel."""
+    from .storage import redact
+
+    message = redact(message)
     args = [str(config.HERMES_EXE), "send", "--to", target, "--quiet"]
     if subject:
         args += ["--subject", subject]

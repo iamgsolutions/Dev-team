@@ -16,7 +16,7 @@ from pathlib import Path
 from .pipeline import run_phase
 from .state import Project, registry_load
 
-ACTIONABLE_STATES = {"pm", "architect", "backend", "frontend", "qa"}
+ACTIONABLE_STATES = {"pm", "architect", "backend", "frontend", "qa", "deploy", "review"}
 
 
 @dataclass

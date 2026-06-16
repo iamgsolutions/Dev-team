@@ -94,7 +94,10 @@ def execute_task(
 
     wt_path, branch = worktree.create(project.path, f"{role}-{task[:30]}")
     try:
-        before = snapshot_mtimes(project.path)
+        # snapshot the WORKTREE memory BEFORE invoking - the agent works in the
+        # worktree, not the main checkout. (audit fix: was snapshotted after
+        # _invoke, forcing a redundant retry on every successful task.)
+        wt_before = snapshot_mtimes(wt_path)
         result = _invoke(rt, prompt, wt_path, timeout_s)
         if rt.brain in subscription.GUARDED_BRAINS:
             subscription.record_call(rt.brain)
@@ -106,15 +109,14 @@ def execute_task(
                                   branch, rt.justification)
 
         # memory handoff enforcement (one retry with explicit warning)
-        wt_before = snapshot_mtimes(wt_path)
-        handoff_ok = verify_handoff(project.path, before) or verify_handoff(wt_path, wt_before)
+        handoff_ok = verify_handoff(wt_path, wt_before)
         if result.status == "ok" and not handoff_ok:
             warn = (prompt + "\n\nAVISO: en tu ejecución anterior NO actualizaste los archivos "
                     "de memoria (.project-memory/STATE.md y NOTES.md). Hazlo AHORA: registra qué "
                     "hiciste, decisiones y pendientes. Sin esto la tarea queda INCOMPLETA.")
             retry = _invoke(rt, warn, wt_path, timeout_s // 2)
             result.cost_usd += retry.cost_usd
-            handoff_ok = verify_handoff(project.path, before) or verify_handoff(wt_path, wt_before)
+            handoff_ok = verify_handoff(wt_path, wt_before)
             if not handoff_ok:
                 result = BrainResult("handoff_violated", result.output, result.cost_usd,
                                      result.model, result.duration_s)

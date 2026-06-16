@@ -98,10 +98,27 @@ def test_cursor_prevents_reprocessing(isolated_dirs, monkeypatch):
 
     monkeypatch.setattr(dl, "fetch_messages", fetch)
     dl.check_interventions(p)
-    p = Project.load(p.path)
-    assert p.last_discord_msg_id == "1000"
+    # cursor is persisted in the ENGINE data dir, NOT in the project repo
+    from devteam.storage import load_json_safe
+    cursors = load_json_safe(dl.config.DATA_DIR / "listener-cursors.json", {})
+    assert cursors.get(p.name) == "1000"
     dl.check_interventions(p)            # second pass: cursor passed, nothing new
     assert seen_after[1] == "1000"
+
+
+def test_unauthorized_author_is_ignored(isolated_dirs, monkeypatch):
+    p = make_project(isolated_dirs)
+    monkeypatch.setattr(dl, "listener_available", lambda: True)
+    monkeypatch.setattr(dl, "_authorized_admin_ids", lambda: {"999"})  # only id 999
+    import devteam.discord_bridge as bridge
+    monkeypatch.setattr(bridge, "send", lambda *a, **k: True)
+    # message author has id "g"/default, not in allowlist -> ignored
+    monkeypatch.setattr(dl, "fetch_messages",
+                        lambda cid, after=None, limit=25: [
+                            {"id": "1", "content": "pausa",
+                             "author": {"bot": False, "id": "123", "username": "intruso"}}])
+    assert dl.check_interventions(p) == []
+    assert Project.load(p.path).paused is False   # command NOT obeyed
 
 
 def test_redirect_writes_directive_to_notes(isolated_dirs, monkeypatch):

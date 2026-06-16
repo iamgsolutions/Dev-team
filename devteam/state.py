@@ -63,7 +63,8 @@ class Project:
             "created": self.created,
             "history": self.history,
         }
-        self.json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        from .storage import atomic_write_json
+        atomic_write_json(self.json_path, payload)
 
     @classmethod
     def load(cls, path: Path) -> "Project":
@@ -118,15 +119,19 @@ def registry_path() -> Path:
 
 
 def registry_load() -> dict:
-    p = registry_path()
-    if p.exists():
-        return json.loads(p.read_text(encoding="utf-8"))
-    return {"projects": {}}
+    # safe load: a corrupt registry.json must NOT raise (it would paralyze the
+    # whole daemon). load_json_safe quarantines the bad file and returns empty.
+    from .storage import load_json_safe
+    reg = load_json_safe(registry_path(), {"projects": {}})
+    if not isinstance(reg, dict) or "projects" not in reg:
+        return {"projects": {}}
+    return reg
 
 
 def registry_save(reg: dict) -> None:
+    from .storage import atomic_write_json
     config.ensure_dirs()
-    registry_path().write_text(json.dumps(reg, indent=2, ensure_ascii=False), encoding="utf-8")
+    atomic_write_json(registry_path(), reg)
 
 
 def registry_add(project: Project) -> None:

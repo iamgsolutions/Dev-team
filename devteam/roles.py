@@ -153,6 +153,31 @@ def review_task(project: Project, author_brain: str | None = None) -> PhaseTask:
     )
 
 
+def deploy_task(project: Project) -> PhaseTask:
+    return PhaseTask(
+        role="deploy",
+        task=(
+            "Como DevOps Engineer: produce los ARTEFACTOS de despliegue del proyecto "
+            "siguiendo ./docs/STANDARDS.md y la arquitectura. Genera: Dockerfile "
+            "multi-stage (imagen runtime mínima, usuario no-root), docker-compose.yml "
+            "(app + Postgres propio + red aislada + healthchecks), .env.example "
+            "completo, un endpoint/script de healthcheck, migraciones aplicadas en "
+            "arranque, y ./docs/DEPLOY_RUNBOOK.md (pasos de deploy + rollback + smoke "
+            "test). NO ejecutes el despliegue (lo hace el operador); produce y valida "
+            "los artefactos (que `docker compose config` sea válido). Documentación en "
+            "español; archivos de config estándar."
+        ),
+        acceptance_criteria=[
+            "existen Dockerfile, docker-compose.yml y .env.example coherentes con el stack",
+            "docker compose config es válido (sintaxis correcta)",
+            "existe ./docs/DEPLOY_RUNBOOK.md con deploy + rollback + smoke test",
+            "ningún secreto hardcodeado en los artefactos",
+        ],
+        expected_output="Dockerfile + docker-compose.yml + .env.example + docs/DEPLOY_RUNBOOK.md",
+        gates=["build"],
+    )
+
+
 # phase (state) -> task generator
 PHASE_TASKS = {
     "pm": pm_task,
@@ -160,4 +185,5 @@ PHASE_TASKS = {
     "backend": backend_task,
     "frontend": frontend_task,
     "qa": qa_task,
+    "deploy": deploy_task,
 }

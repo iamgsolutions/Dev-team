@@ -85,14 +85,14 @@ def _safe_run_phase(p: Project):
         return run_phase(p)
     except Exception as e:  # noqa: BLE001
         try:
-            p.pause(f"excepción inesperada en fase {p.state}: {type(e).__name__}: {e}")
+            p.pause(f"unexpected exception in phase {p.state}: {type(e).__name__}: {e}")
             from .discord_bridge import blocker
             blocker(p.discord_channel,
-                    f"Proyecto {p.name} · fase {p.state}: error inesperado del sistema "
-                    f"({type(e).__name__}) → PAUSADO. Necesito que lo revises antes de reanudar.")
+                    f"Project {p.name} · phase {p.state}: unexpected system error "
+                    f"({type(e).__name__}) → PAUSED. I need you to review it before resuming.")
         except Exception:  # noqa: BLE001 - notification/pause must never re-raise
             pass
-        return PhaseOutcome(p.state, None, None, None, f"excepción: {type(e).__name__}")
+        return PhaseOutcome(p.state, None, None, None, f"exception: {type(e).__name__}")
 
 
 def _pidfile() -> Path:

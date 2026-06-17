@@ -56,6 +56,12 @@ BUILTIN: dict[str, AgentPreset] = {
                                  model=config.OPENCODE_FREE_MODELS[0],
                                  mcps=["filesystem"],
                                  notes="Default frontend worker, free tier."),
+    # jcode-based worker: fast/low-RAM Rust harness, multi-provider. Candidate
+    # for high-parallelism batches (roadmap A) - benchmark vs opencode (roadmap H)
+    # before promoting. Pin a free OpenRouter model via `model=` for cost safety.
+    "backend-jcode": AgentPreset("backend-jcode", "backend", config.BRAIN_JCODE,
+                                 mcps=["filesystem", "postgres"],
+                                 notes="Experimental: jcode workhorse (low-RAM, fast). Pin a free model before use."),
 
     # --- Auditors (review, diverse brain) ---
     "auditor-gemini": AgentPreset("auditor-gemini", "review", config.BRAIN_GEMINI,

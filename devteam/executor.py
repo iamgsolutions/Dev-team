@@ -84,11 +84,11 @@ def execute_task(
         acceptance_criteria=acceptance_criteria,
         expected_output=expected_output,
         model_info=f"{rt.brain} / {rt.model or 'default'} ({rt.justification})",
-        budget_note=(f"restante ${budget.remaining(project):.2f} de "
-                     f"${project.budget_cap_usd:.2f}; no lo superes"),
-        forbidden=forbidden or ["la configuración del sistema", "otros proyectos",
-                                "credenciales y secretos"],
-        gates=gates or ["el código debe ejecutar sin errores"],
+        budget_note=(f"${budget.remaining(project):.2f} remaining of "
+                     f"${project.budget_cap_usd:.2f}; do not exceed it"),
+        forbidden=forbidden or ["the system configuration", "other projects",
+                                "credentials and secrets"],
+        gates=gates or ["the code must run without errors"],
         memory_updates=memory_update_spec(),
     )
     # pre-installed role knowledge (skill pack) - senior craft for every agent,
@@ -132,13 +132,13 @@ def execute_task(
             if chg.alert_80:
                 from .discord_bridge import blocker
                 blocker(project.discord_channel,
-                        f"Proyecto {project.name}: presupuesto al "
+                        f"Project {project.name}: budget at "
                         f"{chg.ratio*100:.0f}% (${chg.spent_usd:.2f}/${chg.cap_usd:.2f}).")
         except budget.BudgetExceeded as e:
             project.pause(str(e))
             from .discord_bridge import blocker
             blocker(project.discord_channel,
-                    f"Proyecto {project.name} PAUSADO por presupuesto: {e}")
+                    f"Project {project.name} PAUSED due to budget: {e}")
             return TaskResult("budget_paused", rt.brain, result.model, 0.0,
                               result.output, branch, rt.justification)
 

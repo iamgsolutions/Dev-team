@@ -8,7 +8,7 @@ messages in a project's channel/thread are parsed for commands:
     aprobar | aprobado | approve | ok aprobado     -> approve checkpoint
     pausa | pausar | para | stop | pause           -> pause project
     reanuda | reanudar | continua | resume         -> resume project
-    redirige: <texto> | director: <texto> | nota: <texto>
+    redirige: <text> | directive: <text> | note: <text>
                                                    -> directive into NOTES.md
 
 Design notes:
@@ -99,7 +99,7 @@ def fetch_messages(channel_id: str, after: str | None = None, limit: int = 25) -
 APPROVE_RE = re.compile(r"^\s*(aprobar|aprobado|aprueba|approve|ok,?\s*aprobado)\b", re.IGNORECASE)
 PAUSE_RE = re.compile(r"^\s*(pausa(r)?|para|stop|pause|detén|deten)\b", re.IGNORECASE)
 RESUME_RE = re.compile(r"^\s*(reanuda(r)?|contin[uú]a|resume|sigue)\b", re.IGNORECASE)
-REDIRECT_RE = re.compile(r"^\s*(redirige|director|nota|directriz)\s*[::]\s*(.+)", re.IGNORECASE | re.DOTALL)
+REDIRECT_RE = re.compile(r"^\s*(redirige|director|nota|directriz|redirect|directive|note)\s*[::]\s*(.+)", re.IGNORECASE | re.DOTALL)
 
 
 def parse_command(text: str) -> tuple[str, str] | None:
@@ -180,12 +180,12 @@ def check_interventions(project) -> list[str]:
         if admins and author_id not in admins:
             from .discord_bridge import send
             send(project.discord_channel,
-                 f"⛔ Ignoro el comando de <@{author_id}>: no está autorizado para dirigir el equipo.")
+                 f"⛔ Ignoring the command from <@{author_id}>: not authorized to direct the team.")
             processed_id = msg["id"]
             continue
         verb, arg = cmd
         try:
-            actions.append(_apply(project, verb, arg, author.get("username", "humano")))
+            actions.append(_apply(project, verb, arg, author.get("username", "human")))
         except Exception as e:  # noqa: BLE001 - one bad command must not stall the cursor
             print(f"[listener] _apply failed ({verb}) on {project.name}: {type(e).__name__}")
         processed_id = msg["id"]   # advance only past handled messages
@@ -200,13 +200,13 @@ def _apply(project, verb: str, arg: str, who: str) -> str:
     from .discord_bridge import send
 
     if verb == "pause":
-        project.pause(f"pausado por {who} desde Discord")
-        send(project.discord_channel, f"⏸ Proyecto **{project.name}** pausado por {who}.")
+        project.pause(f"paused by {who} from Discord")
+        send(project.discord_channel, f"⏸ Project **{project.name}** paused by {who}.")
         return f"pause({project.name})"
 
     if verb == "resume":
-        project.resume(f"reanudado por {who} desde Discord")
-        send(project.discord_channel, f"▶ Proyecto **{project.name}** reanudado por {who}.")
+        project.resume(f"resumed by {who} from Discord")
+        send(project.discord_channel, f"▶ Project **{project.name}** resumed by {who}.")
         return f"resume({project.name})"
 
     if verb == "approve":
@@ -221,20 +221,20 @@ def _apply(project, verb: str, arg: str, who: str) -> str:
         # fake Markdown sections or be very long). Strip leading '#' per line,
         # collapse, cap length.
         clean = "\n".join(re.sub(r"^\s*#+", "", ln) for ln in arg.splitlines())
-        clean = clean.strip()[:1000] or "(directriz vacía)"
+        clean = clean.strip()[:1000] or "(empty directive)"
         try:
             old = notes.read_text(encoding="utf-8", errors="replace") if notes.exists() else ""
             head, _, tail = old.partition("\n## ")
-            entry = (f"\n## {ts} — DIRECTRIZ DEL HUMANO ({who}, via Discord)\n"
-                     f"{clean}\n(Indicación del operador; respétala salvo que choque "
-                     f"con las reglas de seguridad/forbidden, que SIEMPRE mandan.)\n")
+            entry = (f"\n## {ts} — HUMAN DIRECTIVE ({who}, via Discord)\n"
+                     f"{clean}\n(Operator instruction; honor it unless it conflicts "
+                     f"with the security/forbidden rules, which ALWAYS take precedence.)\n")
             from .storage import atomic_write_text
             atomic_write_text(notes, head + entry + (("\n## " + tail) if tail else ""))
             arg = clean
         except OSError as e:
             return f"redirect({project.name}) FAILED: {e}"
         send(project.discord_channel,
-             f"📌 Directriz registrada para **{project.name}**: «{arg[:140]}» — los agentes la leerán en su próxima tarea.")
+             f"📌 Directive recorded for **{project.name}**: «{arg[:140]}» — the agents will read it on their next task.")
         return f"redirect({project.name})"
 
     return ""

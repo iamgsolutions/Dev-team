@@ -23,7 +23,7 @@ def test_adopt_existing_repo(isolated_dirs, tmp_path):
     assert p.name == "legacyapp"
     assert p.state == "qa"                       # audit-first rule
     state = (repo / ".project-memory" / "STATE.md").read_text(encoding="utf-8")
-    assert "ADOPTADO" in state and "payments" in state   # seeded from ROADMAP
+    assert "ADOPTED" in state and "payments" in state   # seeded from ROADMAP
     assert (repo / "AGENTS.md").exists()
     assert (repo / "docs" / "STANDARDS.md").exists()
     assert (repo / "main.py").read_text(encoding="utf-8") == "print('legacy')\n"  # untouched

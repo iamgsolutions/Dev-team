@@ -97,15 +97,15 @@ def all_components() -> list[dict]:
 def format_report(query: str | None = None) -> str:
     comps = search(query) if query else all_components()
     if not comps:
-        return ("catálogo vacío" if not query
-                else f"sin componentes para «{query}»")
-    lines = [f"CATÁLOGO DE COMPONENTES REUTILIZABLES ({len(comps)})"]
+        return ("empty catalog" if not query
+                else f"no components for «{query}»")
+    lines = [f"REUSABLE COMPONENT CATALOG ({len(comps)})"]
     for c in sorted(comps, key=lambda x: x["name"]):
         caps = ", ".join(c.get("capabilities", [])) or "—"
-        used = f" · usado en {len(c['used_in'])}" if c.get("used_in") else ""
-        lines.append(f"\n• {c['name']}  [{c.get('stack') or 'cualquier stack'}]{used}")
+        used = f" · used in {len(c['used_in'])}" if c.get("used_in") else ""
+        lines.append(f"\n• {c['name']}  [{c.get('stack') or 'any stack'}]{used}")
         lines.append(f"    {c['summary']}")
-        lines.append(f"    capacidades: {caps}")
+        lines.append(f"    capabilities: {caps}")
         if c.get("dependencies"):
-            lines.append(f"    depende de: {', '.join(c['dependencies'])}")
+            lines.append(f"    depends on: {', '.join(c['dependencies'])}")
     return "\n".join(lines)

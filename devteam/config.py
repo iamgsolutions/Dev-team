@@ -59,6 +59,7 @@ BRAIN_CLAUDE = "claude"
 BRAIN_CODEX = "codex"
 BRAIN_GEMINI = "gemini"
 BRAIN_OPENCODE = "opencode"
+BRAIN_JCODE = "jcode"   # fast/low-RAM Rust harness, multi-provider (eval 2026-06)
 
 # Default model per brain. OpenCode free-first cascade lives in router/brains.
 # Model IDs verified against `opencode models` output on 2026-06-12.
@@ -71,6 +72,9 @@ DEFAULT_MODELS = {
     BRAIN_CODEX: None,    # codex CLI uses its own configured default
     BRAIN_GEMINI: None,   # gemini CLI default (Pro subscription limits apply)
     BRAIN_OPENCODE: "opencode/deepseek-v4-flash-free",
+    # jcode runs via -p openrouter; None = jcode's own default. Pin a FREE
+    # OpenRouter slug per-preset before using it as a workhorse (roadmap H bench).
+    BRAIN_JCODE: None,
 }
 
 OPENCODE_FREE_MODELS = [
@@ -132,9 +136,9 @@ TRANSITIONS: dict[str, list[str]] = {
 
 # Human checkpoints (spec R3): state -> what must be approved to leave it.
 HUMAN_CHECKPOINTS = {
-    "pm": "PRD aprobado por el humano",
-    "architect": "Arquitectura aprobada por el humano",
-    "review": "Entrega aceptada por el humano",
+    "pm": "PRD approved by the human",
+    "architect": "Architecture approved by the human",
+    "review": "Delivery accepted by the human",
 }
 
 

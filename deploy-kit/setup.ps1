@@ -1,59 +1,50 @@
-# setup.ps1 - Replica el equipo de desarrollo MG en este servidor (idempotente).
-# Ejecutar como Administrador. Ver INSTALL.md para el contexto completo.
+# setup.ps1 - Set up the DEV-TEAM engine on a fresh Windows machine (idempotent).
+# Run as Administrator. See INSTALL.md for full context.
+# This sets up the ENGINE only (no private data). Brain logins are done by the human.
 
 $ErrorActionPreference = "Stop"
 function Step($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
 function Have($cmd) { return [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
 
-$DevRoot = "$env:USERPROFILE\dev"
-$EngineDir = "$DevRoot\hermes-dev-team"
-$KbDir = "$DevRoot\memoria-desarrollo-hermes"
+$DevRoot   = "$env:USERPROFILE\dev"
+$EngineDir = "$DevRoot\Dev-team"
+# Engine repo URL (override with $env:DEVTEAM_REPO if you forked it).
+$RepoUrl   = if ($env:DEVTEAM_REPO) { $env:DEVTEAM_REPO } else { "git@github.com:iamgsolutions/Dev-team.git" }
 
-Step "1/6 Herramientas base"
+Step "1/5 Base tools"
 if (-not (Have node)) { winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements }
 if (-not (Have git))  { winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements }
 if (-not (Have gh))   { winget install --id GitHub.cli -e --accept-source-agreements --accept-package-agreements }
 if (-not (Have uv))   { winget install --id astral-sh.uv -e --accept-source-agreements --accept-package-agreements }
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
-Step "2/6 CLIs de cerebros (npm global)"
-npm install -g @anthropic-ai/claude-code @openai/codex opencode-ai
+Step "2/5 Brain CLIs (npm global)"
+# OpenCode is the free workhorse; Claude/Codex/Gemini are subscription-backed.
+npm install -g @anthropic-ai/claude-code @openai/codex opencode-ai @google/gemini-cli
 
-Step "3/6 Repos (motor + memoria)"
+Step "3/5 Engine repo"
 New-Item -ItemType Directory -Force $DevRoot, "$DevRoot\projects", "$DevRoot\briefs" | Out-Null
-if (-not (Test-Path "$EngineDir\.git")) { git clone "git@github.com:iamgsolutions/hermes-dev-team.git" $EngineDir }
+if (-not (Test-Path "$EngineDir\.git")) { git clone $RepoUrl $EngineDir }
 else { git -C $EngineDir pull }
-if (-not (Test-Path "$KbDir\.git")) { git clone "git@github.com:iamgsolutions/memoria-desarrollo-hermes.git" $KbDir }
-else { git -C $KbDir pull }
 
-Step "4/6 Entorno Python del motor"
+Step "4/5 Python environment"
 Set-Location $EngineDir
 uv venv --python 3.11
 uv pip install -e ".[dev]"
 
-Step "5/6 Tests del motor"
+Step "5/5 Tests"
 & "$EngineDir\.venv\Scripts\python.exe" -m pytest -q
-if ($LASTEXITCODE -ne 0) { Write-Host "TESTS FALLARON - revisar antes de usar" -ForegroundColor Red }
-
-Step "6/6 Skill de Hermes (si hay instalacion de Hermes)"
-$hermesSkills = "$env:LOCALAPPDATA\hermes\skills"
-if (Test-Path $hermesSkills) {
-    $dst = "$hermesSkills\software-development\devteam-engine"
-    New-Item -ItemType Directory -Force $dst | Out-Null
-    Copy-Item "$EngineDir\deploy-kit\hermes-skill\SKILL.md" "$dst\SKILL.md" -Force
-    Write-Host "Skill devteam-engine instalada en Hermes."
-} else {
-    Write-Host "Hermes no detectado en este servidor - skill no instalada (opcional)."
-}
+if ($LASTEXITCODE -ne 0) { Write-Host "TESTS FAILED - review before using" -ForegroundColor Red }
 
 Write-Host @"
 
-LISTO. Pasos manuales restantes (logins humanos):
-  gh auth login            (o token PAT)
+DONE. Remaining manual steps (human logins, once):
+  gh auth login            (or a PAT)
   claude auth login
   codex login
-  opencode auth login      (API key de OpenRouter)
+  opencode auth login      (OpenRouter API key)
+  gemini                   (Login with Google; then /quit)
 
-Verifica:  $EngineDir\.venv\Scripts\python.exe -m devteam.cli status
-Raciones:  ... -m devteam.cli subs --set claude 10
+Verify:   $EngineDir\.venv\Scripts\python.exe -m devteam.cli doctor
+Panel:    $EngineDir\.venv\Scripts\python.exe -m devteam.cli panel
 "@ -ForegroundColor Green

@@ -33,37 +33,38 @@ class PhaseOutcome:
 def run_phase(project: Project) -> PhaseOutcome:
     """Execute the macro-task of the CURRENT phase. Does not skip checkpoints."""
     if project.paused:
-        return PhaseOutcome(project.state, None, None, None, "proyecto pausado")
+        return PhaseOutcome(project.state, None, None, None, "project paused")
 
     phase = project.state
     if project.phase_completed and project.requires_human_checkpoint():
         return PhaseOutcome(phase, None, None, project.requires_human_checkpoint(),
-                            "fase ya completada; esperando aprobación humana")
+                            "phase already completed; waiting for human approval")
     if phase == "clarification":
         return PhaseOutcome(phase, None, None,
-                            "responder a las preguntas de clarificación en el hilo",
-                            "esperando respuestas del humano al brief")
+                            "answer the clarification questions in the thread",
+                            "waiting for the human's answers to the brief")
     # 'review' = human acceptance gate (no agent task): present it once and wait
     if phase == "review":
         project.phase_completed = True
         project.save()
         milestone(project.discord_channel,
-                  f"Proyecto {project.name}: LISTO para tu aceptación. Revisa la entrega "
-                  f"(demo + reporte) y escribe `aprobado` en el hilo para cerrarlo, o "
-                  f"`directriz:` con cambios.")
-        return PhaseOutcome(phase, None, None, "Entrega aceptada por el humano",
-                            "esperando aceptación final del humano")
+                  f"Project {project.name}: READY for your acceptance. Review the delivery "
+                  f"(demo + report) and type `approved` in the thread to close it, or "
+                  f"`directive:` with changes.")
+        return PhaseOutcome(phase, None, None, "Delivery accepted by the human",
+                            "waiting for final human acceptance")
     if phase not in PHASE_TASKS:
         return PhaseOutcome(phase, None, None, None,
-                            f"fase {phase!r} no ejecutable por el pipeline")
+                            f"phase {phase!r} not executable by the pipeline")
 
     spec = PHASE_TASKS[phase](project)
 
-    # ERROR-CORRECTION CASCADE (human's mandate: "cuando haya errores que
-    # primero traten de solucionarlos ellos, si no que suban a Hermes").
-    # Attempt 1 runs the phase task; if gates/audit fail, the agent gets the
-    # exact failure feedback and fixes its OWN work in the same worktree.
-    # Only after MAX_TASK_RETRIES does the blocker escalate to Hermes/human.
+    # ERROR-CORRECTION CASCADE (human's mandate: when errors happen, the agents
+    # should first try to fix them themselves, and only escalate to Hermes if
+    # they can't). Attempt 1 runs the phase task; if gates/audit fail, the agent
+    # gets the exact failure feedback and fixes its OWN work in the same
+    # worktree. Only after MAX_TASK_RETRIES does the blocker escalate to
+    # Hermes/human.
     from pathlib import Path as _P
     from . import config as _cfg
     from . import reflective
@@ -76,9 +77,9 @@ def run_phase(project: Project) -> PhaseOutcome:
     for attempt in range(1, max_attempts + 1):
         task_text = spec.task if not failure_feedback else (
             spec.task
-            + f"\n\nCORRECCIÓN (intento {attempt}): tu trabajo anterior en este mismo "
-              f"worktree NO pasó el control de calidad. Arregla EXACTAMENTE esto y "
-              f"no rompas lo que ya funciona:\n{failure_feedback[:1500]}"
+            + f"\n\nCORRECTION (attempt {attempt}): your previous work in this same "
+              f"worktree did NOT pass quality control. Fix EXACTLY this and do not "
+              f"break what already works:\n{failure_feedback[:1500]}"
         )
         result = execute_task(
             project=project,
@@ -93,12 +94,12 @@ def run_phase(project: Project) -> PhaseOutcome:
 
         if result.status == "deferred":
             return PhaseOutcome(phase, result, None, None,
-                                "aplazada: cerebros premium descansando (ración/límite); se reintentará en la siguiente tanda")
+                                "deferred: premium brains resting (ration/limit); will retry on the next batch")
         if result.status != "ok":
-            failure_feedback = f"la ejecución falló ({result.status}): {result.output[:600]}"
+            failure_feedback = f"execution failed ({result.status}): {result.output[:600]}"
             continue  # self-heal: retry (executor's fallback already tried other models)
 
-        # QUALITY GATES before merge (spec R5: nada avanza sin pasar gates)
+        # QUALITY GATES before merge (spec R5: nothing advances without passing gates)
         if result.worktree:
             report = run_gates(_P(result.worktree))
             eventlog.record("gate", project.name, phase=phase,
@@ -108,21 +109,21 @@ def run_phase(project: Project) -> PhaseOutcome:
                                   note=f"{phase}: {report.summary()[:60]}")
                 failing = "; ".join(f"{c.name}: {c.output[-400:]}" for c in report.checks
                                     if not c.passed and not c.skipped)
-                failure_feedback = f"GATES fallidos — {report.summary()}. Detalle: {failing}"
+                failure_feedback = f"GATES failed — {report.summary()}. Detail: {failing}"
                 continue  # self-heal: agent fixes its own gate failures
 
             # MULTI-MODEL AUDIT for code phases (spec R5). PM/Architect output
             # is audited by the HUMAN checkpoint instead.
             if phase in ("backend", "frontend"):
                 verdict = audit_worktree(_P(result.worktree), author_model=result.model,
-                                         context=f"fase {phase} del proyecto {project.name}",
+                                         context=f"phase {phase} of project {project.name}",
                                          critical=spec.critical)
                 eventlog.record("audit", project.name, phase=phase,
                                 approved=verdict.approved, voters=len(verdict.votes))
                 if not verdict.approved:
                     reflective.record(result.model, result.brain, "audit_rejected",
                                       note=f"{phase}")
-                    failure_feedback = ("AUDITORÍA rechazada. Hallazgos de los auditores:\n"
+                    failure_feedback = ("AUDIT rejected. Findings from the auditors:\n"
                                         + verdict.details[:1200])
                     continue  # self-heal: agent fixes audited findings
 
@@ -131,16 +132,16 @@ def run_phase(project: Project) -> PhaseOutcome:
         # cascade exhausted -> PAUSE the project and escalate (audit fix: not
         # pausing left the project actionable, so the daemon re-ran the failing
         # phase every tick forever, draining budget and premium rations).
-        project.pause(f"cascada agotada en fase {phase} tras {_cfg.MAX_TASK_RETRIES} intentos")
+        project.pause(f"cascade exhausted in phase {phase} after {_cfg.MAX_TASK_RETRIES} attempts")
         eventlog.record("escalate", project.name, phase=phase, reason="cascade_exhausted")
         blocker(project.discord_channel,
-                f"Proyecto {project.name} · fase {phase}: agotados {_cfg.MAX_TASK_RETRIES} "
-                f"intentos de autocorrección → proyecto PAUSADO. Último fallo: "
-                f"{redact(failure_feedback[:400])} Trabajo en rama "
-                f"{result.branch if result else '?'} sin mergear. Reanuda con `reanuda` "
-                f"o da una `directriz:` en el hilo cuando lo redirijas.")
+                f"Project {project.name} · phase {phase}: exhausted {_cfg.MAX_TASK_RETRIES} "
+                f"self-correction attempts → project PAUSED. Last failure: "
+                f"{redact(failure_feedback[:400])} Work on branch "
+                f"{result.branch if result else '?'} not merged. Resume with `resume` "
+                f"or give a `directive:` in the thread when you redirect it.")
         return PhaseOutcome(phase, result, None, None,
-                            f"cascada agotada tras {_cfg.MAX_TASK_RETRIES} intentos (proyecto pausado): "
+                            f"cascade exhausted after {_cfg.MAX_TASK_RETRIES} attempts (project paused): "
                             f"{failure_feedback[:300]}")
 
     # merge the phase branch into main (gates passed), then REMOVE the worktree
@@ -152,7 +153,7 @@ def run_phase(project: Project) -> PhaseOutcome:
             worktree.merge_branch(project.path, result.branch,
                                   f"merge({phase}): {result.branch}")
         except worktree.GitError as e:
-            return PhaseOutcome(phase, result, None, None, f"merge falló: {e}")
+            return PhaseOutcome(phase, result, None, None, f"merge failed: {e}")
         if result.worktree:
             try:
                 worktree.remove(project.path, _P(result.worktree), force=True)
@@ -165,17 +166,17 @@ def run_phase(project: Project) -> PhaseOutcome:
         project.phase_completed = True
         project.save()
         milestone(project.discord_channel,
-                  f"Proyecto {project.name}: fase **{phase}** completada. "
-                  f"CHECKPOINT: {checkpoint}. Usa `devteam approve {project.name}` (o di 'aprobado' en el hilo).")
+                  f"Project {project.name}: phase **{phase}** completed. "
+                  f"CHECKPOINT: {checkpoint}. Use `devteam approve {project.name}` (or say 'approved' in the thread).")
         return PhaseOutcome(phase, result, None, checkpoint)
 
     nxt = _next_state(project)
-    project.transition(nxt, f"fase {phase} completada (auto)")
+    project.transition(nxt, f"phase {phase} completed (auto)")
     eventlog.record("phase", project.name, **{"from": phase, "to": nxt,
                     "spent": round(project.spent_usd, 2)})
     milestone(project.discord_channel,
-              f"Proyecto {project.name}: fase **{phase}** completada → **{nxt}**. "
-              f"Gasto: ${project.spent_usd:.2f}/${project.budget_cap_usd:.0f}.")
+              f"Project {project.name}: phase **{phase}** completed → **{nxt}**. "
+              f"Spend: ${project.spent_usd:.2f}/${project.budget_cap_usd:.0f}.")
     return PhaseOutcome(phase, result, nxt, None)
 
 
@@ -183,15 +184,15 @@ def approve(project: Project) -> str:
     """Human approves the pending checkpoint -> advance to next phase."""
     checkpoint = project.requires_human_checkpoint()
     if not checkpoint:
-        return f"{project.name}: no hay checkpoint pendiente en fase {project.state}"
+        return f"{project.name}: no pending checkpoint in phase {project.state}"
     if project.state == "review":
-        project.transition("done", "entrega aceptada por el humano")
-        milestone(project.discord_channel, f"Proyecto {project.name}: ACEPTADO y terminado. ✔")
+        project.transition("done", "delivery accepted by the human")
+        milestone(project.discord_channel, f"Project {project.name}: ACCEPTED and finished. ✔")
         return f"{project.name}: done"
     nxt = _next_state(project)
-    project.transition(nxt, f"checkpoint aprobado por el humano: {checkpoint}")
+    project.transition(nxt, f"checkpoint approved by the human: {checkpoint}")
     milestone(project.discord_channel,
-              f"Proyecto {project.name}: checkpoint aprobado → fase **{nxt}**.")
+              f"Project {project.name}: checkpoint approved → phase **{nxt}**.")
     return f"{project.name}: {nxt}"
 
 

@@ -116,15 +116,15 @@ def auto_bench() -> list[str]:
 def format_report() -> str:
     d = _load()
     if not d["models"]:
-        return "scorecard vacío (aún sin tareas registradas)"
-    lines = [f"{'MODELO':<45} {'OK':>4} {'FALLOS':>7} {'TASA':>6}  ESTADO"]
+        return "empty scorecard (no tasks recorded yet)"
+    lines = [f"{'MODEL':<45} {'OK':>4} {'FAILS':>7} {'RATE':>6}  STATUS"]
     for model, m in sorted(d["models"].items()):
         ok = m["events"].get(GOOD, 0)
         bad = sum(m["events"].get(e, 0) for e in BAD_EVENTS)
         rate = f"{(ok/(ok+bad)*100):.0f}%" if (ok + bad) else "-"
-        state = "BANQUILLO" if model in d["benched"] else "activo"
+        state = "BENCHED" if model in d["benched"] else "active"
         lines.append(f"{model:<45} {ok:>4} {bad:>7} {rate:>6}  {state}")
     if d["benched"]:
         lines.append("")
-        lines.append("Modelos en el banquillo (excluidos del fallback): " + ", ".join(d["benched"]))
+        lines.append("Benched models (excluded from fallback): " + ", ".join(d["benched"]))
     return "\n".join(lines)

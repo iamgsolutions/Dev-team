@@ -17,7 +17,7 @@ def cmd_new_project(args) -> int:
     )
     print(f"project created: {project.name} at {project.path} [state={project.state}]")
     if questions:
-        print("\nBRIEF INCOMPLETO - preguntas para el humano (enviar agrupadas al hilo):")
+        print("\nINCOMPLETE BRIEF - questions for the human (send them grouped to the thread):")
         for q in questions:
             print(f"  - {q}")
     return 0
@@ -28,7 +28,7 @@ def cmd_adopt(args) -> int:
     p = adopt_project(Path(args.path), name=args.name, cap=args.cap,
                       discord_channel=args.discord or "", initial_state=args.state)
     print(f"adopted: {p.name} at {p.path} [state={p.state}] cap=${p.budget_cap_usd:.0f}")
-    print("primera misión sugerida: devteam run-phase", p.name, "(QA audita lo existente)")
+    print("suggested first mission: devteam run-phase", p.name, "(QA audits what exists)")
     return 0
 
 
@@ -56,27 +56,27 @@ def cmd_status(args) -> int:
 
 def cmd_pause(args) -> int:
     p = registry_get(args.name)
-    p.pause("pausado por el humano via CLI")
+    p.pause("paused by the human via CLI")
     print(f"{p.name} paused")
     return 0
 
 
 def cmd_resume(args) -> int:
     p = registry_get(args.name)
-    p.resume("reanudado por el humano via CLI")
+    p.resume("resumed by the human via CLI")
     print(f"{p.name} resumed")
     return 0
 
 
 def cmd_run_task(args) -> int:
-    """Manual single-task execution (testing / Fase 1 acceptance)."""
+    """Manual single-task execution (testing / Phase 1 acceptance)."""
     from .executor import execute_task
     p = registry_get(args.name)
     res = execute_task(
         project=p,
         role=args.role,
         task=args.task,
-        acceptance_criteria=args.criteria or ["la tarea se completa según lo pedido"],
+        acceptance_criteria=args.criteria or ["the task is completed as requested"],
         critical=args.critical,
         timeout_s=args.timeout,
     )
@@ -146,7 +146,7 @@ def cmd_learn(args) -> int:
     """Teach a role a lesson (learning loop: failure -> permanent craft)."""
     from .skillpack import append_lesson
     f = append_lesson(args.role, args.lesson)
-    print(f"lección añadida al rol {args.role}: {f}")
+    print(f"lesson added to role {args.role}: {f}")
     return 0
 
 
@@ -155,8 +155,8 @@ def cmd_skills(args) -> int:
     if args.role:
         print(load_for_role(args.role))
     else:
-        print("skills disponibles:", ", ".join(available_skills()))
-        print("\nmapeo rol -> skills:")
+        print("available skills:", ", ".join(available_skills()))
+        print("\nrole -> skills mapping:")
         for role, names in ROLE_SKILLS.items():
             print(f"  {role:<10} {', '.join(names)}")
     return 0
@@ -169,10 +169,10 @@ def cmd_catalog(args) -> int:
             name=args.add, summary=args.summary or "",
             capabilities=(args.caps or "").split(",") if args.caps else [],
             stack=args.stack or "", origin_project=args.origin or "")
-        print(f"registrado: {comp['name']}")
+        print(f"registered: {comp['name']}")
     elif args.use:
         catalog.mark_used(args.use, args.project or "")
-        print(f"marcado usado: {args.use} en {args.project}")
+        print(f"marked used: {args.use} in {args.project}")
     else:
         print(catalog.format_report(args.search))
     return 0
@@ -204,42 +204,42 @@ def cmd_panel(args) -> int:
     from . import reflective
 
     print("=" * 64)
-    print(" PANEL DEL EQUIPO DE DESARROLLO — MG Solutions")
+    print(" DEV TEAM CONTROL PANEL — MG Solutions")
     print("=" * 64)
 
     reg = registry_load()
-    print("\nPROYECTOS")
+    print("\nPROJECTS")
     if not reg["projects"]:
-        print("  (ninguno)")
+        print("  (none)")
     for name, path in reg["projects"].items():
         try:
             p = Project.load(Path(path))
-            flag = " [PAUSADO]" if p.paused else ""
-            wait = " ⏳esperando-OK" if (p.phase_completed and p.requires_human_checkpoint()) else ""
+            flag = " [PAUSED]" if p.paused else ""
+            wait = " ⏳waiting-OK" if (p.phase_completed and p.requires_human_checkpoint()) else ""
             pct = (p.spent_usd / p.budget_cap_usd * 100) if p.budget_cap_usd else 0
             print(f"  {name:<20} {p.state:<13} {p.project_type:<7} "
                   f"${p.spent_usd:.2f}/${p.budget_cap_usd:.0f} ({pct:.0f}%){flag}{wait}")
         except Exception as e:  # noqa: BLE001
-            print(f"  {name:<20} (illegible: {e})")
+            print(f"  {name:<20} (unreadable: {e})")
 
-    print("\nRACIONES PREMIUM (hoy)")
+    print("\nPREMIUM RATIONS (today)")
     for brain, v in substatus().items():
-        rest = "" if v["available"] else (" DESCANSANDO" if v["cooling_down"] else " RACIÓN AGOTADA")
-        print(f"  {brain:<8} {v['calls_today']}/{v['daily_budget']} llamadas{rest}")
+        rest = "" if v["available"] else (" COOLING-DOWN" if v["cooling_down"] else " RATION EXHAUSTED")
+        print(f"  {brain:<8} {v['calls_today']}/{v['daily_budget']} calls{rest}")
 
-    print("\nSCORECARD DE MODELOS")
+    print("\nMODEL SCORECARD")
     print("  " + reflective.format_report().replace("\n", "\n  "))
 
     from . import catalog
     n_comp = len(catalog.all_components())
-    print(f"\nCATÁLOGO REUTILIZABLE: {n_comp} componente(s)  ·  EVENTOS recientes: `devteam log`")
+    print(f"\nREUSABLE CATALOG: {n_comp} component(s)  ·  recent EVENTS: `devteam log`")
 
-    print("\nSALUD DEL SISTEMA")
+    print("\nSYSTEM HEALTH")
     from .doctor import run_doctor
     checks = run_doctor()
     bad = [c for c in checks if not c.ok]
     print(f"  {len(checks)-len(bad)}/{len(checks)} OK" +
-          ("" if not bad else "  ·  PROBLEMAS: " + ", ".join(c.name for c in bad)))
+          ("" if not bad else "  ·  ISSUES: " + ", ".join(c.name for c in bad)))
     print("=" * 64)
     return 0
 

@@ -68,13 +68,14 @@ def estimate_fallback_cost(model_key: str, prompt: str, output: str) -> float:
 
 def get_invoker(brain: str):
     """Return the invoke() callable for a brain name."""
-    from . import claude, codex, gemini, opencode
+    from . import claude, codex, gemini, jcode, opencode
 
     table = {
         config.BRAIN_CLAUDE: claude.invoke,
         config.BRAIN_CODEX: codex.invoke,
         config.BRAIN_GEMINI: gemini.invoke,
         config.BRAIN_OPENCODE: opencode.invoke,
+        config.BRAIN_JCODE: jcode.invoke,
     }
     if brain not in table:
         raise KeyError(f"unknown brain {brain!r}")

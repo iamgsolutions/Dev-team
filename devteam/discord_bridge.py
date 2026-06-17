@@ -39,9 +39,9 @@ def send(target: str, message: str, subject: str | None = None, timeout_s: int =
 
 
 def milestone(project_discord: str, text: str) -> bool:
-    """Hito → Discord (spec R12: solo hitos y bloqueos)."""
-    return send(project_discord or "discord", text, subject="[hito]")
+    """Milestone → Discord (spec R12: only milestones and blockers)."""
+    return send(project_discord or "discord", text, subject="[milestone]")
 
 
 def blocker(project_discord: str, text: str) -> bool:
-    return send(project_discord or "discord", text, subject="[BLOQUEO]")
+    return send(project_discord or "discord", text, subject="[BLOCKER]")

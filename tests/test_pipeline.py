@@ -82,7 +82,7 @@ def test_paused_project_never_executes(isolated_dirs, monkeypatch):
     monkeypatch.setattr(pipeline, "execute_task", lambda **kw: called.append(1) or ok_result())
     out = pipeline.run_phase(p)
     assert not called
-    assert "pausado" in out.note
+    assert "paused" in out.note
 
 
 def test_review_approval_finishes_project(isolated_dirs):
@@ -94,5 +94,5 @@ def test_review_approval_finishes_project(isolated_dirs):
 def test_no_checkpoint_approve_is_noop(isolated_dirs):
     p = make_project(isolated_dirs, "backend")
     msg = pipeline.approve(p)
-    assert "no hay checkpoint" in msg
+    assert "no pending checkpoint" in msg
     assert p.state == "backend"

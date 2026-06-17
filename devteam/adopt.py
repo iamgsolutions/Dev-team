@@ -31,7 +31,7 @@ def _seed_summary(path: Path, max_chars: int = 1500) -> str:
         if f.exists():
             text = f.read_text(encoding="utf-8", errors="ignore").strip()
             return f"(de {name})\n" + text[:max_chars]
-    return "(el repo no trae README/ROADMAP legible - el director debe pedir contexto)"
+    return "(the repo has no readable README/ROADMAP - the director must ask for context)"
 
 
 def adopt_project(
@@ -54,21 +54,21 @@ def adopt_project(
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     (mem / "STATE.md").write_text(
-        f"# STATE — {name} (proyecto ADOPTADO)\n\n"
-        f"Adoptado por el sistema: {ts}\n\n"
-        f"## Resumen del proyecto (según su propia documentación)\n{_seed_summary(path)}\n\n"
-        f"## Estado actual\nProyecto existente recién adoptado. PRIMERA MISIÓN: auditoría QA\n"
-        f"completa (qué funciona de verdad, qué está a medias, qué falta vs roadmap).\n\n"
-        f"## Hecho\n(heredado del repo - ver git log)\n\n"
-        f"## Pendiente\nAuditoría inicial → backlog real → completar el roadmap.\n",
+        f"# STATE — {name} (ADOPTED project)\n\n"
+        f"Adopted by the system: {ts}\n\n"
+        f"## Project summary (from its own documentation)\n{_seed_summary(path)}\n\n"
+        f"## Current state\nExisting project just adopted. FIRST MISSION: full QA\n"
+        f"audit (what really works, what's half-done, what's missing vs roadmap).\n\n"
+        f"## Done\n(inherited from the repo - see git log)\n\n"
+        f"## Pending\nInitial audit → real backlog → complete the roadmap.\n",
         encoding="utf-8",
     )
     (mem / "NOTES.md").write_text(
         f"# NOTES — {name}\n\n"
-        "Avisos y decisiones de un agente al siguiente. El más reciente escribe ARRIBA.\n\n"
-        f"## {ts} — sistema\nProyecto EXISTENTE adoptado. Respetar el código y las decisiones\n"
-        "previas del repo; ante contradicción entre el roadmap del repo y STANDARDS.md,\n"
-        "anotarla aquí y que decida el director.\n",
+        "Notices and decisions from one agent to the next. The most recent writes ON TOP.\n\n"
+        f"## {ts} — system\nEXISTING project adopted. Respect the repo's code and prior\n"
+        "decisions; if the repo roadmap and STANDARDS.md contradict each other,\n"
+        "note it here and let the director decide.\n",
         encoding="utf-8",
     )
 

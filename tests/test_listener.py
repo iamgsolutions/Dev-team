@@ -131,4 +131,4 @@ def test_redirect_writes_directive_to_notes(isolated_dirs, monkeypatch):
     actions = dl.check_interventions(p)
     assert actions == [f"redirect({p.name})"]
     notes = (p.path / ".project-memory" / "NOTES.md").read_text(encoding="utf-8")
-    assert "DIRECTRIZ DEL HUMANO" in notes and "solo postgres" in notes
+    assert "HUMAN DIRECTIVE" in notes and "solo postgres" in notes

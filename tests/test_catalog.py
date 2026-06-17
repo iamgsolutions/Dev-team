@@ -37,7 +37,7 @@ def test_mark_used_tracks_projects(isolated_dirs):
 
 
 def test_format_report(isolated_dirs):
-    assert "vacío" in catalog.format_report()
+    assert "empty" in catalog.format_report()
     catalog.register("auth-jwt", "login seguro", capabilities=["auth"])
     rep = catalog.format_report()
     assert "auth-jwt" in rep and "login seguro" in rep

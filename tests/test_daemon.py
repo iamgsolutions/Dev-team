@@ -34,5 +34,5 @@ def test_safe_run_phase_pauses_on_unexpected_exception(isolated_dirs, monkeypatc
     monkeypatch.setattr(daemon, "run_phase", explode)
     monkeypatch.setattr("devteam.discord_bridge.blocker", lambda *a, **k: True)
     out = daemon._safe_run_phase(p)
-    assert out.note.startswith("excepción")
+    assert out.note.startswith("exception")
     assert Project.load(p.path).paused is True   # paused, NOT left re-failing

@@ -3,43 +3,43 @@
 One canonical standard injected into every project as docs/STANDARDS.md.
 The Architect MUST follow it instead of inventing structure per project -
 this is what makes 10 projects feel built by one team (human's mandate:
-"mismo criterio, mismo lenguaje y formas de organizar el código siempre").
+"same criteria, same language and ways of organizing the code, always").
 
 Distilled from senior practice (Fable mentorship session, 2026-06-12).
 """
 from __future__ import annotations
 
 STANDARDS_MD = """\
-# STANDARDS.md - Estándares de ingeniería del equipo (NO negociables)
+# STANDARDS.md - Team engineering standards (NON-negotiable)
 
-Todo proyecto de este equipo se construye igual. El Architect aplica esto;
-los demás roles lo siguen. Desviarse requiere anotarlo en docs/architecture.md
-con justificación explícita.
+Every project on this team is built the same way. The Architect applies this;
+the other roles follow it. Deviating requires noting it in docs/architecture.md
+with an explicit justification.
 
-## 1. Estructura de proyecto
+## 1. Project structure
 
-### Backend Python (FastAPI) - por defecto
+### Backend Python (FastAPI) - default
 ```
 app/
-  main.py            # create_app() + wiring, NADA de lógica
-  api/               # routers por recurso (notes.py, users.py)
-  core/              # config (pydantic-settings desde env), seguridad
+  main.py            # create_app() + wiring, NO logic
+  api/               # routers per resource (notes.py, users.py)
+  core/              # config (pydantic-settings from env), security
   models/            # SQLAlchemy/SQLModel
-  schemas/           # pydantic request/response (NUNCA exponer models crudos)
-  services/          # lógica de negocio (los routers NO contienen lógica)
+  schemas/           # pydantic request/response (NEVER expose raw models)
+  services/          # business logic (routers do NOT contain logic)
   db.py              # engine/session
 migrations/          # alembic
 tests/
-  conftest.py        # app de test + DB efímera
-  test_api_*.py      # un archivo por router
-.env.example         # TODAS las vars documentadas, valores fake
+  conftest.py        # test app + ephemeral DB
+  test_api_*.py      # one file per router
+.env.example         # ALL vars documented, fake values
 Dockerfile
 ```
 
-### Backend Node/TypeScript (si el proyecto lo exige)
+### Backend Node/TypeScript (if the project requires it)
 ```
 src/
-  index.ts           # bootstrap, NADA de lógica
+  index.ts           # bootstrap, NO logic
   routes/  services/  models/  schemas/  config.ts
 tests/
 ```
@@ -47,46 +47,46 @@ tests/
 ### Frontend Next.js + TypeScript
 ```
 src/
-  app/               # app router; páginas = composición, no lógica
-  components/        # ui/ (genéricos) y features/ (por dominio)
-  lib/api.ts         # ÚNICO punto de llamadas al backend (fetch wrapper)
-  lib/types.ts       # tipos compartidos del contrato API
+  app/               # app router; pages = composition, no logic
+  components/        # ui/ (generic) and features/ (per domain)
+  lib/api.ts         # the ONLY point for backend calls (fetch wrapper)
+  lib/types.ts       # shared types from the API contract
 ```
-Toda llamada a API pasa por lib/api.ts y maneja: éxito, carga, error.
+Every API call goes through lib/api.ts and handles: success, loading, error.
 
-## 2. Reglas de código
-- Idioma: código/identificadores/commits INGLÉS; docs y comentarios de
-  negocio ESPAÑOL.
-- Nombres: descriptivos, sin abreviar (getUserNotes, no getUN).
-- Funciones cortas (<40 líneas); módulos cortos (<400 líneas).
-- Tipado SIEMPRE: type hints en Python, strict TypeScript.
-- Errores: NUNCA tragarse excepciones. Capturar -> log con contexto ->
-  respuesta de error del contrato. Backend responde {"detail": "..."}
-  con códigos HTTP correctos (400 input, 401/403 auth, 404, 409, 422, 500).
-- Validación de TODO input externo (pydantic/zod) ANTES de tocar lógica.
-- Sin código muerto, sin TODOs sin issue, sin console.log/print en main.
+## 2. Code rules
+- Language: code/identifiers/commits ENGLISH; docs and business
+  comments ENGLISH.
+- Names: descriptive, not abbreviated (getUserNotes, not getUN).
+- Short functions (<40 lines); short modules (<400 lines).
+- ALWAYS typed: type hints in Python, strict TypeScript.
+- Errors: NEVER swallow exceptions. Catch -> log with context ->
+  the contract's error response. Backend responds {"detail": "..."}
+  with correct HTTP codes (400 input, 401/403 auth, 404, 409, 422, 500).
+- Validation of ALL external input (pydantic/zod) BEFORE touching logic.
+- No dead code, no TODOs without an issue, no console.log/print in main.
 
-## 3. Seguridad (mínimo SIEMPRE, sin excepción)
-- Secretos SOLO en .env (en .gitignore). .env.example documenta sin valores.
-- SQL siempre parametrizado (ORM); NUNCA f-strings/concatenación en queries.
-- Passwords: bcrypt/argon2. Tokens: JWT con expiración. CORS explícito.
-- Inputs sanitizados; salidas escapadas (XSS); uploads validados.
-- Dependencias: versiones fijadas (lockfile committeado).
+## 3. Security (the minimum ALWAYS, no exception)
+- Secrets ONLY in .env (in .gitignore). .env.example documents without values.
+- SQL always parameterized (ORM); NEVER f-strings/concatenation in queries.
+- Passwords: bcrypt/argon2. Tokens: JWT with expiration. Explicit CORS.
+- Sanitized inputs; escaped outputs (XSS); validated uploads.
+- Dependencies: pinned versions (committed lockfile).
 
-## 4. Tests (definition of done incluye esto)
-- Cada endpoint: test de éxito + tests de errores (validación, no-existe).
-- Lógica de negocio (services/): tests unitarios.
-- Mínimo orientativo: 70% coverage en services/ y api/.
-- Tests deterministas: sin red externa, sin sleeps, DB efímera.
+## 4. Tests (definition of done includes this)
+- Each endpoint: success test + error tests (validation, not-found).
+- Business logic (services/): unit tests.
+- Indicative minimum: 70% coverage in services/ and api/.
+- Deterministic tests: no external network, no sleeps, ephemeral DB.
 
 ## 5. Git
-- Commits convencionales: feat:/fix:/test:/docs:/chore:/refactor:.
-- Mensajes en inglés, imperativo, <72 chars la primera línea.
+- Conventional commits: feat:/fix:/test:/docs:/chore:/refactor:.
+- Messages in English, imperative, <72 chars on the first line.
 
-## 6. Documentación mínima por proyecto
-- README.md: qué es, cómo arrancar (3 comandos máx), cómo testear.
+## 6. Minimum documentation per project
+- README.md: what it is, how to start (3 commands max), how to test.
 - docs/architecture.md, docs/api-contract.md, docs/data-model.md (Architect).
-- .env.example completo.
+- complete .env.example.
 """
 
 

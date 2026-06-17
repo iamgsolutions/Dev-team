@@ -2,7 +2,7 @@
 
 M4 v1 design (deliberate): each phase runs ONE well-instructed macro-task.
 Fine-grained task decomposition (PM plan -> N tasks) is iteration 2 - building
-levels honestly instead of faking granularity (build/03 'fasificación realista').
+levels honestly instead of faking granularity (build/03 'realistic phasing').
 
 Each role returns the kwargs for executor.execute_task(). Role-specific rules
 complement the universal ones (build/05-agent-rules.md).
@@ -29,17 +29,17 @@ def pm_task(project: Project) -> PhaseTask:
     return PhaseTask(
         role="pm",
         task=(
-            "Como Product Manager: lee ./BRIEF.md y produce el PRD del proyecto en ./docs/PRD.md "
-            "(crea la carpeta docs/ si no existe). El PRD debe contener: objetivo, usuarios, "
-            "historias de usuario con prioridad MoSCoW, criterios de aceptación verificables por "
-            "funcionalidad, alcance excluido, y un plan de fases técnico de alto nivel. "
-            "NO inventes requisitos: lo que no esté en el brief y sea crítico, lístalo en una "
-            "sección final 'Preguntas al humano'. Documentación en español."
+            "As Product Manager: read ./BRIEF.md and produce the project PRD in ./docs/PRD.md "
+            "(create the docs/ folder if it does not exist). The PRD must contain: objective, users, "
+            "user stories with MoSCoW priority, verifiable acceptance criteria per "
+            "feature, excluded scope, and a high-level technical phase plan. "
+            "Do NOT invent requirements: whatever is not in the brief and is critical, list it in a "
+            "final section 'Questions for the human'. Documentation in English."
         ),
         acceptance_criteria=[
-            "existe ./docs/PRD.md con todas las secciones pedidas",
-            "cada funcionalidad M tiene criterios de aceptación verificables",
-            "las dudas críticas están en 'Preguntas al humano' (no asumidas)",
+            "./docs/PRD.md exists with all requested sections",
+            "every M feature has verifiable acceptance criteria",
+            "critical doubts are in 'Questions for the human' (not assumed)",
         ],
         expected_output="./docs/PRD.md",
         critical=True,  # design quality drives everything downstream
@@ -51,30 +51,30 @@ def architect_task(project: Project) -> PhaseTask:
     comps = catalog.all_components()
     catalog_ctx = ""
     if comps:
-        catalog_ctx = ("\n\n=== CATÁLOGO DE COMPONENTES REUTILIZABLES DEL EQUIPO ===\n"
+        catalog_ctx = ("\n\n=== CATALOG OF THE TEAM'S REUSABLE COMPONENTS ===\n"
                        + catalog.format_report()
-                       + "\nReutiliza lo que aplique a este proyecto antes de diseñar nada nuevo.")
+                       + "\nReuse whatever applies to this project before designing anything new.")
     return PhaseTask(
         role="architect",
         task=(
-            "Como Architect: lee ./docs/PRD.md y ./docs/STANDARDS.md (los estándares del "
-            "equipo: estructura, reglas de código, seguridad, tests — son OBLIGATORIOS, "
-            "no inventes otra organización). Si el sistema te ha pasado un CATÁLOGO de "
-            "componentes reutilizables en el contexto, REUTILIZA lo que aplique (no "
-            "rehagas auth, pagos, paneles si ya existen) y anótalo en docs/architecture.md "
-            "('componentes reutilizados'). Decide la arquitectura con best practices. "
-            "Produce: ./docs/architecture.md (stack elegido y por qué, estructura de carpetas, "
-            "decisiones tipo ADR), ./docs/api-contract.md (TODOS los endpoints: ruta, método, "
-            "request/response JSON, códigos de error) y ./docs/data-model.md (entidades, campos, "
-            "relaciones, migración inicial). Stack por defecto del equipo: backend Python/FastAPI "
-            "o Node/TypeScript (elige el que mejor encaje y justifica), frontend Next.js+React+TS, "
-            "base de datos Postgres. Documentación en español; identificadores de código en inglés."
+            "As Architect: read ./docs/PRD.md and ./docs/STANDARDS.md (the team's "
+            "standards: structure, code rules, security, tests — they are MANDATORY, "
+            "do not invent another organization). If the system has passed you a CATALOG of "
+            "reusable components in the context, REUSE whatever applies (do not "
+            "rebuild auth, payments, dashboards if they already exist) and note it in docs/architecture.md "
+            "('reused components'). Decide the architecture with best practices. "
+            "Produce: ./docs/architecture.md (chosen stack and why, folder structure, "
+            "ADR-style decisions), ./docs/api-contract.md (ALL endpoints: route, method, "
+            "request/response JSON, error codes) and ./docs/data-model.md (entities, fields, "
+            "relationships, initial migration). Team default stack: backend Python/FastAPI "
+            "or Node/TypeScript (pick the one that fits best and justify it), frontend Next.js+React+TS, "
+            "Postgres database. Documentation in English; code identifiers in English."
             + catalog_ctx
         ),
         acceptance_criteria=[
-            "existen architecture.md, api-contract.md y data-model.md en ./docs/",
-            "el contrato de API cubre todas las funcionalidades M del PRD",
-            "cada decisión de stack tiene justificación",
+            "architecture.md, api-contract.md and data-model.md exist in ./docs/",
+            "the API contract covers all M features of the PRD",
+            "every stack decision has a justification",
         ],
         expected_output="./docs/architecture.md + api-contract.md + data-model.md",
         critical=True,
@@ -85,20 +85,20 @@ def backend_task(project: Project) -> PhaseTask:
     return PhaseTask(
         role="backend",
         task=(
-            "Como Backend Engineer: implementa EXACTAMENTE ./docs/api-contract.md siguiendo "
-            "./docs/architecture.md, ./docs/data-model.md y los estándares de ./docs/STANDARDS.md "
-            "(estructura, manejo de errores, seguridad, tests). Incluye: código de la API completa, "
-            "validación de inputs, manejo de errores con los códigos del contrato, y tests "
-            "(unit + integración) de cada endpoint incluyendo casos de error. Si el contrato "
-            "tiene un problema, NO lo cambies: documenta la objeción en NOTES.md y continúa "
-            "implementando lo contratado. Código y commits en inglés."
+            "As Backend Engineer: implement EXACTLY ./docs/api-contract.md following "
+            "./docs/architecture.md, ./docs/data-model.md and the standards in ./docs/STANDARDS.md "
+            "(structure, error handling, security, tests). Include: complete API code, "
+            "input validation, error handling with the contract's codes, and tests "
+            "(unit + integration) for each endpoint including error cases. If the contract "
+            "has a problem, do NOT change it: document the objection in NOTES.md and continue "
+            "implementing what was contracted. Code and commits in English."
         ),
         acceptance_criteria=[
-            "todos los endpoints del contrato implementados",
-            "tests de cada endpoint (éxito + error) incluidos",
-            "el proyecto arranca sin errores y los tests pasan localmente",
+            "all contract endpoints implemented",
+            "tests for each endpoint (success + error) included",
+            "the project starts without errors and the tests pass locally",
         ],
-        expected_output="código backend + tests, según estructura de architecture.md",
+        expected_output="backend code + tests, per the architecture.md structure",
         gates=["lint", "tests"],
     )
 
@@ -107,18 +107,18 @@ def frontend_task(project: Project) -> PhaseTask:
     return PhaseTask(
         role="frontend",
         task=(
-            "Como Frontend Engineer: implementa la interfaz según ./docs/PRD.md (flujos de "
-            "usuario) consumiendo EXACTAMENTE ./docs/api-contract.md, con la estructura y "
-            "reglas de ./docs/STANDARDS.md. Lee NOTES.md: el backend "
-            "dejó ahí avisos sobre formatos reales de respuesta. Incluye estados de carga y "
-            "error en cada llamada a la API. Código y commits en inglés."
+            "As Frontend Engineer: implement the interface per ./docs/PRD.md (user "
+            "flows) consuming EXACTLY ./docs/api-contract.md, with the structure and "
+            "rules of ./docs/STANDARDS.md. Read NOTES.md: the backend "
+            "left warnings there about the real response formats. Include loading and "
+            "error states on every API call. Code and commits in English."
         ),
         acceptance_criteria=[
-            "todos los flujos M del PRD son completables desde la UI",
-            "cada llamada a la API maneja éxito, carga y error",
-            "build del frontend pasa sin errores",
+            "all M flows of the PRD are completable from the UI",
+            "every API call handles success, loading and error",
+            "the frontend build passes without errors",
         ],
-        expected_output="aplicación frontend según architecture.md",
+        expected_output="frontend application per architecture.md",
         gates=["lint", "build"],
     )
 
@@ -127,21 +127,21 @@ def qa_task(project: Project) -> PhaseTask:
     return PhaseTask(
         role="qa",
         task=(
-            "Como QA/Tester real: verifica el proyecto entero. (1) Ejecuta la suite de tests "
-            "existente. (2) Revisa que CADA endpoint de ./docs/api-contract.md responde según "
-            "contrato (éxito y errores). (3) Revisa que los flujos de usuario del PRD funcionan "
-            "de punta a punta (front consume back correctamente). Produce ./docs/qa-report.md "
-            "con: qué probaste, qué pasó, y una lista accionable de defectos (cómo reproducir, "
-            "severidad). Sé escéptico: tu trabajo es ENCONTRAR problemas. NO arregles código: "
-            "solo reporta."
+            "As a real QA/Tester: verify the entire project. (1) Run the existing test "
+            "suite. (2) Check that EVERY endpoint in ./docs/api-contract.md responds per "
+            "contract (success and errors). (3) Check that the PRD user flows work "
+            "end to end (front consumes back correctly). Produce ./docs/qa-report.md "
+            "with: what you tested, what happened, and an actionable list of defects (how to reproduce, "
+            "severity). Be skeptical: your job is to FIND problems. Do NOT fix code: "
+            "just report."
         ),
         acceptance_criteria=[
-            "existe ./docs/qa-report.md con resultados por endpoint y por flujo",
-            "cada defecto tiene reproducción y severidad",
-            "veredicto final: APTO o NO-APTO con razones",
+            "./docs/qa-report.md exists with results per endpoint and per flow",
+            "each defect has reproduction and severity",
+            "final verdict: PASS or FAIL with reasons",
         ],
         expected_output="./docs/qa-report.md",
-        forbidden=["modificar código de la aplicación (solo reportas)"],
+        forbidden=["modifying application code (you only report)"],
     )
 
 
@@ -149,18 +149,18 @@ def review_task(project: Project, author_brain: str | None = None) -> PhaseTask:
     return PhaseTask(
         role="review",
         task=(
-            "Como Code Reviewer/Auditor: audita el código del proyecto (calidad, seguridad, "
-            "mantenibilidad). Busca: secretos hardcodeados, inputs sin validar, inyección "
-            "SQL/XSS, errores de lógica, desviaciones del contrato de API. Produce "
-            "./docs/review-report.md con hallazgos clasificados (crítico/mayor/menor) y "
-            "veredicto APROBADO o RECHAZADO (rechaza si hay críticos)."
+            "As Code Reviewer/Auditor: audit the project's code (quality, security, "
+            "maintainability). Look for: hardcoded secrets, unvalidated inputs, "
+            "SQL/XSS injection, logic errors, API contract deviations. Produce "
+            "./docs/review-report.md with classified findings (critical/major/minor) and "
+            "an APPROVED or REJECTED verdict (reject if there are critical ones)."
         ),
         acceptance_criteria=[
-            "existe ./docs/review-report.md con hallazgos clasificados",
-            "veredicto justificado",
+            "./docs/review-report.md exists with classified findings",
+            "justified verdict",
         ],
         expected_output="./docs/review-report.md",
-        forbidden=["modificar código (solo auditas)"],
+        forbidden=["modifying code (you only audit)"],
     )
 
 
@@ -168,21 +168,21 @@ def deploy_task(project: Project) -> PhaseTask:
     return PhaseTask(
         role="deploy",
         task=(
-            "Como DevOps Engineer: produce los ARTEFACTOS de despliegue del proyecto "
-            "siguiendo ./docs/STANDARDS.md y la arquitectura. Genera: Dockerfile "
-            "multi-stage (imagen runtime mínima, usuario no-root), docker-compose.yml "
-            "(app + Postgres propio + red aislada + healthchecks), .env.example "
-            "completo, un endpoint/script de healthcheck, migraciones aplicadas en "
-            "arranque, y ./docs/DEPLOY_RUNBOOK.md (pasos de deploy + rollback + smoke "
-            "test). NO ejecutes el despliegue (lo hace el operador); produce y valida "
-            "los artefactos (que `docker compose config` sea válido). Documentación en "
-            "español; archivos de config estándar."
+            "As DevOps Engineer: produce the project's deployment ARTIFACTS "
+            "following ./docs/STANDARDS.md and the architecture. Generate: a multi-stage "
+            "Dockerfile (minimal runtime image, non-root user), docker-compose.yml "
+            "(app + its own Postgres + isolated network + healthchecks), a complete "
+            ".env.example, a healthcheck endpoint/script, migrations applied at "
+            "startup, and ./docs/DEPLOY_RUNBOOK.md (deploy steps + rollback + smoke "
+            "test). Do NOT run the deployment (the operator does that); produce and validate "
+            "the artifacts (that `docker compose config` is valid). Documentation in "
+            "English; standard config files."
         ),
         acceptance_criteria=[
-            "existen Dockerfile, docker-compose.yml y .env.example coherentes con el stack",
-            "docker compose config es válido (sintaxis correcta)",
-            "existe ./docs/DEPLOY_RUNBOOK.md con deploy + rollback + smoke test",
-            "ningún secreto hardcodeado en los artefactos",
+            "Dockerfile, docker-compose.yml and .env.example exist, consistent with the stack",
+            "docker compose config is valid (correct syntax)",
+            "./docs/DEPLOY_RUNBOOK.md exists with deploy + rollback + smoke test",
+            "no hardcoded secret in the artifacts",
         ],
         expected_output="Dockerfile + docker-compose.yml + .env.example + docs/DEPLOY_RUNBOOK.md",
         gates=["build"],

@@ -54,8 +54,8 @@ def test_lessons_get_injected_into_pack(isolated_dirs, monkeypatch, tmp_path):
     shutil.copytree(skillpack.SKILLS_DIR, tmp_skills)
     monkeypatch.setattr(skillpack, "SKILLS_DIR", tmp_skills)
     before = skillpack.load_for_role("backend")
-    skillpack.append_lesson("backend", "no olvides el índice en la FK de notes")
+    skillpack.append_lesson("backend", "do not forget the index on the notes FK")
     after = skillpack.load_for_role("backend")
-    assert "LECCIONES APRENDIDAS" in after
-    assert "índice en la FK" in after
+    assert "LESSONS LEARNED" in after
+    assert "index on the notes FK" in after
     assert len(after) > len(before)

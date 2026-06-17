@@ -25,16 +25,16 @@ def init_memory(project_path: Path, project_name: str, brief_summary: str) -> No
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     (d / STATE_MD).write_text(
         f"# STATE — {project_name}\n\n"
-        f"Creado: {ts}\n\n"
-        f"## Resumen del proyecto\n{brief_summary}\n\n"
-        f"## Estado actual\nProyecto recién creado. Nada construido aún.\n\n"
-        f"## Hecho\n(nada)\n\n## Pendiente\nTodo el pipeline.\n",
+        f"Created: {ts}\n\n"
+        f"## Project summary\n{brief_summary}\n\n"
+        f"## Current state\nProject just created. Nothing built yet.\n\n"
+        f"## Done\n(nothing)\n\n## Pending\nThe whole pipeline.\n",
         encoding="utf-8",
     )
     (d / NOTES_MD).write_text(
         f"# NOTES — {project_name}\n\n"
-        "Avisos y decisiones de un agente al siguiente. El agente más reciente escribe ARRIBA.\n\n"
-        f"## {ts} — sistema\nProyecto inicializado.\n",
+        "Warnings and decisions from one agent to the next. The most recent agent writes AT THE TOP.\n\n"
+        f"## {ts} — system\nProject initialized.\n",
         encoding="utf-8",
     )
 
@@ -66,15 +66,15 @@ def read_notes(project_path: Path) -> str:
 
 
 def memory_paths_for_instruction(project_path: Path) -> list[str]:
-    """Relative paths an agent must read first (ORIENTACION block)."""
+    """Relative paths an agent must read first (ORIENTATION block)."""
     base = f"./{config.PROJECT_MEMORY_DIR}"
     return [f"{base}/{STATE_MD}", f"{base}/{NOTES_MD}"]
 
 
 def memory_update_spec() -> list[str]:
-    """Standard CIERRE block contents for any task."""
+    """Standard CLOSE-OUT block contents for any task."""
     base = f"./{config.PROJECT_MEMORY_DIR}"
     return [
-        f"{base}/{STATE_MD}: actualiza 'Hecho'/'Pendiente' con tu trabajo",
-        f"{base}/{NOTES_MD}: añade arriba decisiones, dudas y avisos al siguiente agente",
+        f"{base}/{STATE_MD}: update 'Done'/'Pending' with your work",
+        f"{base}/{NOTES_MD}: add decisions, doubts and warnings for the next agent at the top",
     ]

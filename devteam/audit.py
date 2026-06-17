@@ -22,8 +22,12 @@ from .brains import opencode as oc_brain
 from .brains import codex as codex_brain
 from .brains import gemini as gemini_brain
 
-VERDICT_APPROVED = "APROBADO"
-VERDICT_REJECTED = "RECHAZADO"
+VERDICT_APPROVED = "APPROVED"
+VERDICT_REJECTED = "REJECTED"
+# Accept both English and Spanish verdict tokens so the parser never breaks if a
+# model answers in either language (the skills are English; some models reply ES).
+_APPROVED_TOKENS = ("APPROVED", "APROBADO")
+_REJECTED_TOKENS = ("REJECTED", "RECHAZADO")
 
 
 @dataclass
@@ -52,24 +56,24 @@ def _diff_of(worktree: Path, max_chars: int = 60_000) -> str:
 
 def _audit_prompt(diff: str, context: str) -> str:
     return (
-        "Eres un auditor de código escéptico del equipo MG. Tu trabajo es ENCONTRAR "
-        "problemas, no aprobar rápido. Audita este diff buscando: secretos hardcodeados, "
-        "inputs sin validar, inyección (SQL/XSS/command), errores de lógica, desviaciones "
-        "del contrato, manejo de errores ausente.\n\n"
-        f"Contexto de la tarea: {context}\n\n"
-        "=== DIFF ===\n" + diff + "\n=== FIN DIFF ===\n\n"
-        f"Responde EXACTAMENTE en este formato:\nVEREDICTO: {VERDICT_APPROVED} o "
-        f"{VERDICT_REJECTED}\nHALLAZGOS:\n- (lista, severidad crítico/mayor/menor; "
-        "'ninguno' si no hay)\n"
-        f"Rechaza SOLO si hay hallazgos críticos."
+        "You are a skeptical code auditor on the MG team. Your job is to FIND "
+        "problems, not to approve fast. Audit this diff for: hardcoded secrets, "
+        "unvalidated inputs, injection (SQL/XSS/command), logic errors, contract "
+        "deviations, missing error handling.\n\n"
+        f"Task context: {context}\n\n"
+        "=== DIFF ===\n" + diff + "\n=== END DIFF ===\n\n"
+        f"Reply EXACTLY in this format:\nVERDICT: {VERDICT_APPROVED} or "
+        f"{VERDICT_REJECTED}\nFINDINGS:\n- (list, severity critical/major/minor; "
+        "'none' if there are none)\n"
+        "Reject ONLY if there are critical findings."
     )
 
 
 def _parse_verdict(text: str) -> bool:
     up = (text or "").upper()
-    if VERDICT_REJECTED in up:
+    if any(t in up for t in _REJECTED_TOKENS):
         return False
-    return VERDICT_APPROVED in up  # missing/garbled verdict counts as NOT approved
+    return any(t in up for t in _APPROVED_TOKENS)  # missing/garbled = NOT approved
 
 
 def audit_worktree(

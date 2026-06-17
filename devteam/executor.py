@@ -11,6 +11,7 @@ execute_task() is the ONLY path through which a brain touches a project:
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from . import budget, config, worktree
@@ -69,8 +70,11 @@ def execute_task(
                           None, rt.justification)
 
     state_summary = read_state(project.path)
-    current_state = (state_summary.split("## Estado actual", 1)[-1].split("##", 1)[0].strip()
-                     or f"fase {project.state}")[:600]
+    # STATE.md uses the English header "## Current state" (new projects); legacy
+    # adopted projects may still carry the Spanish "## Estado actual" - accept both.
+    _state_section = re.split(r"##\s*(?:Current state|Estado actual)", state_summary, maxsplit=1)[-1]
+    current_state = (_state_section.split("##", 1)[0].strip()
+                     or f"phase {project.state}")[:600]
 
     instr = Instruction(
         role=role,
@@ -112,9 +116,9 @@ def execute_task(
         # memory handoff enforcement (one retry with explicit warning)
         handoff_ok = verify_handoff(wt_path, wt_before)
         if result.status == "ok" and not handoff_ok:
-            warn = (prompt + "\n\nAVISO: en tu ejecución anterior NO actualizaste los archivos "
-                    "de memoria (.project-memory/STATE.md y NOTES.md). Hazlo AHORA: registra qué "
-                    "hiciste, decisiones y pendientes. Sin esto la tarea queda INCOMPLETA.")
+            warn = (prompt + "\n\nWARNING: in your previous run you did NOT update the memory "
+                    "files (.project-memory/STATE.md and NOTES.md). Do it NOW: record what "
+                    "you did, decisions and pending items. Without this the task is INCOMPLETE.")
             retry = _invoke(rt, warn, wt_path, timeout_s // 2)
             result.cost_usd += retry.cost_usd
             handoff_ok = verify_handoff(wt_path, wt_before)

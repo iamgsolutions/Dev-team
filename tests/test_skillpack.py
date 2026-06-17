@@ -31,8 +31,8 @@ def test_packs_are_size_capped():
 
 def test_role_specific_content():
     assert "PRD" in skillpack.load_for_role("pm")
-    assert "contrato" in skillpack.load_for_role("architect").lower()
-    assert "VEREDICTO" in skillpack.load_for_role("review")
+    assert "contract" in skillpack.load_for_role("architect").lower()
+    assert "VERDICT" in skillpack.load_for_role("review")
     assert "reproduc" in skillpack.load_for_role("qa").lower()
 
 
@@ -58,13 +58,13 @@ def test_project_type_unknown_is_safe():
 
 def test_instruction_includes_knowledge_block():
     instr = full_instruction()
-    instr.skills_pack = "## SKILL X\ncontenido"
+    instr.skills_pack = "## SKILL X\ncontent"
     text = instr.build()
-    assert "== CONOCIMIENTO DEL ROL" in text
-    assert text.index("CONOCIMIENTO") < text.index("CIERRE")  # before CIERRE
+    assert "== ROLE KNOWLEDGE" in text
+    assert text.index("KNOWLEDGE") < text.index("CLOSE-OUT")  # before CLOSE-OUT
 
 
 def test_instruction_without_pack_still_valid():
     text = full_instruction().build()
-    assert "CONOCIMIENTO" not in text
-    assert "== CIERRE" in text
+    assert "KNOWLEDGE" not in text
+    assert "== CLOSE-OUT" in text

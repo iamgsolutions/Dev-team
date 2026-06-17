@@ -20,11 +20,11 @@ def full_instruction(**overrides):
 
 def test_complete_instruction_contains_four_blocks():
     text = full_instruction().build()
-    for block in ("== ORIENTACIÓN ==", "== TAREA ==", "== RESTRICCIONES ==",
-                  "== CIERRE (OBLIGATORIO antes de terminar) =="):
+    for block in ("== ORIENTATION ==", "== TASK ==", "== CONSTRAINTS ==",
+                  "== CLOSE-OUT (MANDATORY before finishing) =="):
         assert block in text
     assert "STATELESS" in text
-    assert "la tarea NO está completa" in text
+    assert "the task is NOT complete" in text
 
 
 @pytest.mark.parametrize("missing", [
@@ -34,7 +34,7 @@ def test_complete_instruction_contains_four_blocks():
     {"acceptance_criteria": []},
     {"model_info": ""},
     {"budget_note": ""},
-    {"memory_updates": []},   # the CIERRE block - the protocol's heart
+    {"memory_updates": []},   # the CLOSE-OUT block - the protocol's heart
 ])
 def test_missing_any_block_raises(missing):
     with pytest.raises(MalformedInstruction):

@@ -1,16 +1,16 @@
-# SKILL: Testing — tests que protegen, no que decoran
+# SKILL: Testing — tests that protect, not that decorate
 
-- Cada test: UNA cosa, nombre que describe el comportamiento
-  (`test_create_note_rejects_empty_title`), patrón AAA (arrange-act-assert).
-- Prueba COMPORTAMIENTO por la interfaz pública (el endpoint, la función de
-  service) — no internals privados que cambian con cada refactor.
-- Por cada función de negocio: caso feliz + 2 tristes mínimo (input inválido,
-  recurso inexistente). Los bugs viven en los caminos tristes.
-- Deterministas: DB efímera por test/suite (sqlite memoria o tmp), sin red
-  real, sin sleeps (usa señales/polling con timeout), sin orden implícito.
-- Fixtures para el setup repetido (app, cliente, usuario auth) — en conftest.
-- Un bug arreglado = un test que lo habría cazado (regresión).
-- Cobertura es un termómetro, no un objetivo: 70% en services/api con tests
-  REALES vale más que 95% de tests vacíos.
-- Si un test es difícil de escribir, el diseño está acoplado: anótalo en
-  NOTES.md como deuda.
+- Each test: ONE thing, a name that describes the behavior
+  (`test_create_note_rejects_empty_title`), AAA pattern (arrange-act-assert).
+- Test BEHAVIOR through the public interface (the endpoint, the service
+  function) — not private internals that change with every refactor.
+- For each business function: happy path + 2 sad paths minimum (invalid input,
+  nonexistent resource). Bugs live on the sad paths.
+- Deterministic: ephemeral DB per test/suite (in-memory sqlite or tmp), no real
+  network, no sleeps (use signals/polling with a timeout), no implicit ordering.
+- Fixtures for repeated setup (app, client, authenticated user) — in conftest.
+- A fixed bug = a test that would have caught it (regression).
+- Coverage is a thermometer, not a goal: 70% in services/api with REAL
+  tests is worth more than 95% of empty tests.
+- If a test is hard to write, the design is coupled: note it in
+  NOTES.md as debt.

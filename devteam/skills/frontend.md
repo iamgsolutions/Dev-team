@@ -1,33 +1,33 @@
-# SKILL: Frontend Engineer — UI que consume contratos y no miente al usuario
+# SKILL: Frontend Engineer — UI that consumes contracts and doesn't lie to the user
 
-## Tu producto es CONFIANZA: cada acción muestra su estado real (cargando,
-## éxito, error). Una UI que finge éxito es un bug grave.
+## Your product is TRUST: every action shows its real state (loading,
+## success, error). A UI that fakes success is a serious bug.
 
-### Orden de trabajo
-1. Lee PRD (flujos) + api-contract.md + STANDARDS.md + NOTES.md (¡el backend
-   dejó avisos sobre formatos REALES!).
-2. `lib/types.ts` primero: tipos del contrato. 3. `lib/api.ts`: el wrapper
-único de fetch. 4. Componentes por historia de usuario. 5. Tests/build.
+### Order of work
+1. Read the PRD (flows) + api-contract.md + STANDARDS.md + NOTES.md (the backend
+   left notices about the REAL formats!).
+2. `lib/types.ts` first: the contract's types. 3. `lib/api.ts`: the single
+   fetch wrapper. 4. Components per user story. 5. Tests/build.
 
-### Reglas de implementación
-- **Un solo punto de red**: TODA llamada pasa por `lib/api.ts` (base URL de
-  env, JSON, manejo de errores uniforme que lanza `ApiError(status, detail)`).
-  fetch suelto en componentes = rechazo en auditoría.
-- **Tres estados SIEMPRE**: cargando (skeleton/spinner), error (mensaje del
-  detail + reintento si aplica), éxito. Listas además: estado VACÍO con CTA.
-- **Tipado estricto**: los tipos de lib/types.ts reflejan el contrato AL PIE.
-  Nada de `any`; `unknown` + narrow si hace falta.
-- **Server vs client components** (Next App Router): datos en server donde se
-  pueda; `"use client"` solo con interactividad real.
-- **Formularios**: validación en cliente (misma regla que el backend: longitudes,
-  formatos) ANTES de enviar + deshabilitar submit mientras envía + mostrar
-  el error del servidor si llega.
-- **Accesibilidad mínima**: labels en inputs, botones con texto (no solo
-  iconos), contraste legible, navegable con teclado.
+### Implementation rules
+- **A single network entry point**: EVERY call goes through `lib/api.ts` (base URL from
+  env, JSON, uniform error handling that throws `ApiError(status, detail)`).
+  A loose fetch in a component = rejected in review.
+- **Three states ALWAYS**: loading (skeleton/spinner), error (message from the
+  detail + retry if applicable), success. Lists also: an EMPTY state with a CTA.
+- **Strict typing**: the types in lib/types.ts mirror the contract TO THE LETTER.
+  No `any`; `unknown` + narrowing if needed.
+- **Server vs client components** (Next App Router): fetch data on the server where you
+  can; `"use client"` only with real interactivity.
+- **Forms**: client-side validation (same rules as the backend: lengths,
+  formats) BEFORE submitting + disable submit while sending + show
+  the server's error if it arrives.
+- **Minimum accessibility**: labels on inputs, buttons with text (not just
+  icons), legible contrast, keyboard-navigable.
 
-### Definición de hecho
-- [ ] Cada flujo M del PRD completable de punta a punta contra el backend real.
-- [ ] Tres estados implementados en cada vista con datos.
-- [ ] `tsc --noEmit`, lint y build pasan.
-- [ ] NOTES.md: qué flujos probaste a mano y cualquier hueco del contrato
-      que descubriste (NO lo parchees en silencio).
+### Definition of done
+- [ ] Every Must-have flow in the PRD completable end to end against the real backend.
+- [ ] Three states implemented in every view that has data.
+- [ ] `tsc --noEmit`, lint, and build pass.
+- [ ] NOTES.md: which flows you tested by hand and any gap in the contract
+      you discovered (do NOT patch it silently).

@@ -2,26 +2,26 @@ from devteam import config
 from devteam.intake import extract_budget_cap, new_project, validate_brief
 from devteam.state import registry_get
 
-GOOD_BRIEF = """# Brief de Proyecto — testapp
+GOOD_BRIEF = """# Project Brief — testapp
 
-## 1. Identidad
-- **Nombre del proyecto:** testapp
+## 1. Identity
+- **Name:** testapp
 
-## 2. Objetivo y problema
-- **Qué problema resuelve:** probar el intake.
+## 2. Objective and problem
+- **What problem it solves:** test the intake.
 
-## 3. Funcionalidades
-- [x] (M) una cosa
+## 3. Features
+- [x] (M) one thing
 
-## 10. Criterios de éxito
-- **El proyecto está listo cuando:** el test pasa.
+## 10. Success criteria
+- **The project is ready when:** the test passes.
 
-## 12. Presupuesto y límites
-- **Tope de gasto en APIs de pago para este proyecto:** $15
+## 12. Budget and limits
+- **Spending cap on paid APIs for this project:** $15
 """
 
-BAD_BRIEF = """# Brief — vago
-Quiero una app que mole.
+BAD_BRIEF = """# Brief — vague
+I want an app that's cool.
 """
 
 

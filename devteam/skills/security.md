@@ -1,21 +1,21 @@
-# SKILL: Seguridad — mínimos de esta casa (vendemos a empresas)
+# SKILL: Security — this house's minimums (we sell to enterprises)
 
-1. **Secretos**: SOLO en env vars (.env gitignored; .env.example documenta).
-   En código/commits/logs = incidente. El gate los escanea: no lo retes.
-2. **Inyección**: SQL parametrizado SIEMPRE (ORM). Comandos shell: nunca
-   construir con input de usuario. Paths: valida contra traversal (../).
-3. **Auth**: passwords con bcrypt/argon2 (NUNCA texto plano ni MD5/SHA1).
-   JWT con expiración (≤24h) y secret de env. Endpoints protegidos verifican
-   PROPIEDAD (el recurso es del usuario), no solo identidad.
-4. **Validación en el borde**: todo input externo (body, query, headers,
-   uploads) validado en tipo, formato, longitud y rango ANTES de usarse.
-5. **XSS/Output**: frameworks ya escapan — no lo desactives
-   (dangerouslySetInnerHTML/| safe solo con sanitizado explícito).
-6. **CORS**: orígenes explícitos del entorno, jamás "*" con credenciales.
-7. **Errores opacos hacia fuera**: el detail nunca filtra stacktraces,
-   rutas internas, versiones ni SQL. El log interno sí lo guarda todo.
-8. **Dependencias**: lockfile committeado; añadir una dependencia requiere
-   justificarla en NOTES.md (cada una es superficie de ataque).
-9. **Datos personales**: si el proyecto los maneja (emails, nombres, pagos),
-   anótalo SIEMPRE en NOTES.md — el director debe saberlo (es decisión de
-   negocio: GDPR, contratos).
+1. **Secrets**: ONLY in env vars (.env gitignored; .env.example documents them).
+   In code/commits/logs = incident. The gate scans for them: don't test it.
+2. **Injection**: parameterized SQL ALWAYS (ORM). Shell commands: never
+   build them with user input. Paths: validate against traversal (../).
+3. **Auth**: passwords with bcrypt/argon2 (NEVER plain text or MD5/SHA1).
+   JWT with expiration (≤24h) and a secret from env. Protected endpoints verify
+   OWNERSHIP (the resource belongs to the user), not just identity.
+4. **Validation at the edge**: all external input (body, query, headers,
+   uploads) validated for type, format, length and range BEFORE being used.
+5. **XSS/Output**: frameworks already escape — don't disable it
+   (dangerouslySetInnerHTML/| safe only with explicit sanitization).
+6. **CORS**: explicit origins from the environment, never "*" with credentials.
+7. **Opaque errors to the outside**: the detail never leaks stacktraces,
+   internal paths, versions or SQL. The internal log does keep everything.
+8. **Dependencies**: lockfile committed; adding a dependency requires
+   justifying it in NOTES.md (each one is attack surface).
+9. **Personal data**: if the project handles it (emails, names, payments),
+   ALWAYS note it in NOTES.md — the director must know (it's a business
+   decision: GDPR, contracts).

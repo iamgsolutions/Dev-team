@@ -1,30 +1,30 @@
-# SKILL: Estilo de código — rúbrica objetiva para auditar igual siempre
+# SKILL: Code style — an objective rubric to audit the same way every time
 
-## Para el auditor: aplica esta rúbrica para que tu veredicto no dependa del
-## modelo que te tocó ser. Para el que escribe: cúmplela y pasarás review.
+## For the auditor: apply this rubric so your verdict doesn't depend on which
+## model you happened to be. For the author: meet it and you'll pass review.
 
-### Rúbrica de estilo (medible)
-- **Naming**: descriptivo, sin abreviar (`getUserNotes`, no `getUN`). Funciones
-  = verbo; variables = sustantivo; booleanos = `is/has/can`. Inglés.
-- **Tamaño**: función < 40 líneas; archivo < 400; anidación < 4 niveles. Si se
-  pasa, extrae. (Métrica, no opinión.)
-- **Una responsabilidad**: una función hace UNA cosa. Si su nombre lleva "y",
-  son dos funciones.
-- **Sin duplicación evidente**: el mismo bloque 3 veces → extrae. (Pero no
-  abstraigas por 2 usos triviales — duplicar barato > abstracción equivocada.)
-- **Comentarios**: explican el PORQUÉ, no el QUÉ (el código dice el qué). Cero
-  comentarios que repiten la línea. Cero código comentado muerto.
-- **Sin ruido**: nada de `console.log`/`print` de depuración, imports sin usar,
-  variables sin usar, TODOs sin issue.
-- **Consistencia**: sigue el patrón del archivo/proyecto, no introduzcas un
-  estilo nuevo en un módulo que ya tiene el suyo.
+### Style rubric (measurable)
+- **Naming**: descriptive, no abbreviations (`getUserNotes`, not `getUN`).
+  Functions = verb; variables = noun; booleans = `is/has/can`. English.
+- **Size**: function < 40 lines; file < 400; nesting < 4 levels. If it exceeds
+  that, extract. (A metric, not an opinion.)
+- **Single responsibility**: a function does ONE thing. If its name contains
+  "and", it's two functions.
+- **No obvious duplication**: the same block 3 times → extract. (But don't
+  abstract over 2 trivial uses — cheap duplication > the wrong abstraction.)
+- **Comments**: explain the WHY, not the WHAT (the code says the what). Zero
+  comments that restate the line. Zero dead commented-out code.
+- **No noise**: no debug `console.log`/`print`, no unused imports, no unused
+  variables, no TODOs without an issue.
+- **Consistency**: follow the file's/project's pattern; don't introduce a new
+  style in a module that already has its own.
 
-### Veredicto del auditor (formato que el motor parsea)
+### Auditor's verdict (the format the engine parses)
 ```
-VEREDICTO: APROBADO | RECHAZADO
-HALLAZGOS:
-- [crítico|mayor|menor] archivo:línea — qué y por qué
+VERDICT: APPROVED | REJECTED
+FINDINGS:
+- [critical|major|minor] file:line — what and why
 ```
-- RECHAZADO si: ≥1 crítico (seguridad/corrección) o ≥3 mayores.
-- Menores se listan, NO bloquean (deuda, no defecto).
-- Sé concreto: "en general el código…" no es un hallazgo.
+- REJECTED if: ≥1 critical (security/correctness) or ≥3 majors.
+- Minors are listed, they do NOT block (debt, not defect).
+- Be specific: "the code in general…" is not a finding.

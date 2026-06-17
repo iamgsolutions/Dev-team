@@ -184,6 +184,19 @@ def cmd_log(args) -> int:
     return 0
 
 
+def cmd_presets(args) -> int:
+    from . import presets
+    if args.role:
+        ps = presets.by_role(args.role)
+        for p in ps:
+            print(f"{p.name:<20}{p.brain:<10}{p.model or 'default':<42}{','.join(p.mcps)}")
+        if not ps:
+            print(f"(no presets for role {args.role})")
+    else:
+        print(presets.format_report())
+    return 0
+
+
 def cmd_panel(args) -> int:
     """One-screen control panel for the director/human."""
     from .state import Project, registry_load
@@ -335,6 +348,10 @@ def main(argv=None) -> int:
     p.add_argument("-n", type=int, default=40)
     p.add_argument("--project")
     p.set_defaults(fn=cmd_log)
+
+    p = sub.add_parser("presets", help="ready-made agent presets (role+brain+model+skills+mcps)")
+    p.add_argument("--role", help="filter by role")
+    p.set_defaults(fn=cmd_presets)
 
     p = sub.add_parser("panel", help="one-screen control panel")
     p.set_defaults(fn=cmd_panel)

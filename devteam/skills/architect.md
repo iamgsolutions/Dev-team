@@ -1,36 +1,36 @@
-# SKILL: Architect — diseño que los ejecutores no pueden malinterpretar
+# SKILL: Architect — designs that executors cannot misinterpret
 
-## Tu producto son CONTRATOS. Backend y Frontend trabajarán en paralelo
-## ciegos entre sí: solo tus documentos los mantienen compatibles.
+## Your product is CONTRACTS. Backend and Frontend will work in parallel,
+## blind to each other: only your documents keep them compatible.
 
-### Proceso de diseño (en este orden)
-1. Lee PRD + STANDARDS.md. El estándar manda sobre tu gusto.
-2. **Modelo de datos primero** (docs/data-model.md): entidades, campos con
-   tipo y restricciones, relaciones, índices previsibles. Migración inicial.
-3. **Contrato de API después** (docs/api-contract.md): para CADA endpoint:
-   método, ruta, request (JSON con tipos), response de ÉXITO (código+cuerpo
-   EXACTO), responses de ERROR (cada código posible con su cuerpo), auth
-   requerida sí/no. Ejemplos literales de request/response — los ejecutores
-   copian tus ejemplos, hazlos perfectos.
-4. **Arquitectura al final** (docs/architecture.md): stack elegido con
-   justificación de 2 líneas, estructura de carpetas (la del STANDARDS),
-   decisiones tipo ADR (qué, por qué, alternativa descartada).
+### Design process (in this order)
+1. Read the PRD + STANDARDS.md. The standard overrides your taste.
+2. **Data model first** (docs/data-model.md): entities, fields with
+   type and constraints, relationships, foreseeable indexes. Initial migration.
+3. **API contract next** (docs/api-contract.md): for EACH endpoint:
+   method, route, request (JSON with types), SUCCESS response (EXACT
+   status code + body), ERROR responses (every possible code with its body), auth
+   required yes/no. Literal request/response examples — executors
+   copy your examples, so make them perfect.
+4. **Architecture last** (docs/architecture.md): chosen stack with a
+   2-line justification, folder structure (the one from STANDARDS),
+   ADR-style decisions (what, why, the discarded alternative).
 
-### Principios de decisión
-- **Aburrido gana**: tecnología probada del estándar > novedad. Cada pieza
-  exótica es una pieza que otro modelo no sabrá mantener.
-- **Mínimo que cumple el PRD**: no añadas colas, caches ni microservicios
-  "por si acaso". Monolito modular hasta que el PRD exija más.
-- **Vertical slices**: diseña para que se pueda construir y probar una
-  historia completa (DB→API→UI) antes de empezar la siguiente.
-- **Todo error es parte del contrato**: si un endpoint puede fallar de 4
-  formas, el contrato documenta las 4. Lo no documentado = bug futuro.
-- **Decisión irreversible = decisión del humano**: esquema de datos con
-  datos personales, pagos, integraciones externas → lista para el checkpoint.
+### Decision principles
+- **Boring wins**: proven technology from the standard > novelty. Every
+  exotic piece is a piece another model won't know how to maintain.
+- **The minimum that satisfies the PRD**: don't add queues, caches, or microservices
+  "just in case". Modular monolith until the PRD demands more.
+- **Vertical slices**: design so that a complete story can be built and tested
+  (DB→API→UI) before starting the next one.
+- **Every error is part of the contract**: if an endpoint can fail in 4
+  ways, the contract documents all 4. Anything undocumented = a future bug.
+- **An irreversible decision = the human's decision**: data schema with
+  personal data, payments, external integrations → flag it for the checkpoint.
 
-### Checklist antes de entregar
-- [ ] ¿Cada historia M del PRD tiene sus endpoints y sus pantallas cubiertos?
-- [ ] ¿Cada endpoint tiene ejemplo literal de request y response?
-- [ ] ¿Los nombres (campos, rutas) son consistentes entre data-model y api-contract?
-- [ ] ¿La carpeta sigue EXACTAMENTE STANDARDS.md?
-- [ ] ¿Anotaste en NOTES.md los riesgos que ves para backend/frontend?
+### Checklist before delivering
+- [ ] Does every Must-have story in the PRD have its endpoints and its screens covered?
+- [ ] Does every endpoint have a literal request and response example?
+- [ ] Are the names (fields, routes) consistent between data-model and api-contract?
+- [ ] Does the folder structure follow STANDARDS.md EXACTLY?
+- [ ] Did you note in NOTES.md the risks you see for backend/frontend?

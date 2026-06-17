@@ -1,30 +1,30 @@
-# SKILL: Privacidad de datos (GDPR práctico para B2B)
+# SKILL: Data privacy (practical GDPR for B2B)
 
-## Si el proyecto toca datos personales (nombres, emails, ubicación, pagos,
-## salud), esto NO es opcional — es legal y comercial (vendemos a empresas UE).
+## If the project touches personal data (names, emails, location, payments,
+## health), this is NOT optional — it's legal and commercial (we sell to EU enterprises).
 
-### Diseño con privacidad
-- **Minimización**: pide y guarda SOLO los datos necesarios para la función.
-  ¿Necesitas la fecha de nacimiento o basta "mayor de edad"? Guarda lo mínimo.
-- **Marca la PII**: en el data-model, señala qué columnas son datos personales
-  (nombre, email, IP, ubicación). El director debe saberlo (decisión de negocio).
-- **Base legal**: para cada dato personal, ¿por qué se procesa? (consentimiento,
-  contrato, interés legítimo). Consentimiento = explícito, revocable, registrado.
-- **Retención**: define cuánto se guarda cada dato y qué lo borra. Nada "para
-  siempre por defecto".
+### Privacy by design
+- **Minimization**: ask for and store ONLY the data needed for the function.
+  Do you need the date of birth, or is "of legal age" enough? Store the minimum.
+- **Mark the PII**: in the data model, flag which columns are personal data
+  (name, email, IP, location). The director must know (a business decision).
+- **Legal basis**: for each piece of personal data, why is it processed?
+  (consent, contract, legitimate interest). Consent = explicit, revocable, recorded.
+- **Retention**: define how long each piece of data is kept and what deletes it.
+  Nothing "forever by default".
 
-### Derechos del usuario (implementables)
-- **Acceso/portabilidad**: poder exportar SUS datos (JSON).
-- **Borrado** ("derecho al olvido"): poder eliminar su cuenta y datos
-  (hard-delete o anonimización, no solo soft-delete si pidió borrado real).
-- **Rectificación**: poder corregir sus datos.
+### User rights (implementable)
+- **Access/portability**: be able to export THEIR data (JSON).
+- **Erasure** ("right to be forgotten"): be able to delete their account and data
+  (hard-delete or anonymization, not just soft-delete if they asked for real deletion).
+- **Rectification**: be able to correct their data.
 
-### Seguridad de la PII
-- Cifrada en tránsito (HTTPS) y, los datos sensibles, en reposo.
-- Logs y reportes NUNCA contienen PII en claro (usa ids).
-- No compartas PII con terceros (analytics, IA) sin base legal y aviso.
+### PII security
+- Encrypted in transit (HTTPS) and, for sensitive data, at rest.
+- Logs and reports NEVER contain PII in the clear (use ids).
+- Don't share PII with third parties (analytics, AI) without a legal basis and notice.
 
-### Regla del director
-Cuando detectes PII o una decisión con implicación legal (cookies, tracking,
-menores, pagos), ANÓTALO en NOTES.md y escálalo al checkpoint humano. No
-decidas tú lo que es responsabilidad legal del negocio.
+### Director's rule
+When you detect PII or a decision with legal implications (cookies, tracking,
+minors, payments), NOTE IT in NOTES.md and escalate it to the human checkpoint.
+Don't decide yourself what is the business's legal responsibility.

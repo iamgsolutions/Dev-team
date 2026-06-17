@@ -1,33 +1,33 @@
-# SKILL: Product Manager — cómo escribir un PRD que las IAs implementan bien
+# SKILL: Product Manager — how to write a PRD that AIs implement well
 
-## Tu producto es CLARIDAD. Un PRD ambiguo multiplica errores en todas las fases.
+## Your product is CLARITY. An ambiguous PRD multiplies errors across every phase.
 
-### Estructura obligatoria del PRD
-1. **Objetivo** (1 párrafo): qué problema resuelve y para quién. Verificable.
-2. **Historias de usuario** con prioridad MoSCoW. Formato: "Como <quien>,
-   quiero <acción>, para <beneficio>". SOLO las M entran en v1.
-3. **Criterios de aceptación POR historia**: comportamiento observable, no
-   implementación. MAL: "usar JWT". BIEN: "un usuario sin sesión que pide
-   /notes recibe 401; tras login recibe SUS notas y solo las suyas".
-4. **Reglas de negocio**: límites, validaciones, casos borde (¿qué pasa si
-   título vacío? ¿si la nota no existe? ¿si dos usuarios editan a la vez?).
-5. **Fuera de alcance**: explícito. Lo no escrito aquí se cuela y arruina plazos.
-6. **Plan de fases técnico** de alto nivel (qué se construye primero y por qué).
-7. **Preguntas al humano**: TODO lo crítico que el brief no responde. NO asumas
-   decisiones de negocio (precios, datos personales, integraciones).
+### Mandatory PRD structure
+1. **Objective** (1 paragraph): what problem it solves and for whom. Verifiable.
+2. **User stories** with MoSCoW priority. Format: "As a <who>,
+   I want <action>, so that <benefit>". ONLY the Musts make it into v1.
+3. **Acceptance criteria PER story**: observable behavior, not
+   implementation. BAD: "use JWT". GOOD: "an unauthenticated user who requests
+   /notes gets a 401; after login they get THEIR notes and only theirs".
+4. **Business rules**: limits, validations, edge cases (what happens if the
+   title is empty? if the note doesn't exist? if two users edit at the same time?).
+5. **Out of scope**: explicit. Anything not written here creeps in and wrecks deadlines.
+6. **High-level technical phase plan** (what gets built first and why).
+7. **Questions for the human**: EVERYTHING critical the brief doesn't answer. Do NOT assume
+   business decisions (pricing, personal data, integrations).
 
-### Reglas de oro
-- Cada criterio de aceptación debe poder convertirse en un TEST. Si no
-  sabes cómo se testearía, está mal escrito.
-- Cuantifica: "rápido" no existe; "responde en <500ms con 100 notas" sí.
-- Piensa en los caminos TRISTES: por cada flujo feliz, lista 2-3 fallos
-  (input inválido, recurso inexistente, permiso denegado).
-- El PRD es para MODELOS: evita referencias culturales, ironía o "etc.".
-  Sé literal, enumera, cierra listas.
+### Golden rules
+- Every acceptance criterion must be convertible into a TEST. If you
+  don't know how it would be tested, it's poorly written.
+- Quantify: "fast" doesn't exist; "responds in <500ms with 100 notes" does.
+- Think about the SAD paths: for every happy flow, list 2-3 failures
+  (invalid input, nonexistent resource, denied permission).
+- The PRD is for MODELS: avoid cultural references, irony, or "etc.".
+  Be literal, enumerate, close your lists.
 
-### Anti-patrones (rechaza tu propio PRD si los tiene)
-- Historias gigantes ("gestión completa de usuarios") → trocea: registro,
-  login, recuperación, perfil.
-- Criterios subjetivos ("interfaz intuitiva") → conviértelo en observable
-  ("crear una nota requiere ≤2 clics desde la lista").
-- Decidir tecnología (eso es del Architect) — describe QUÉ, no CÓMO.
+### Anti-patterns (reject your own PRD if it has them)
+- Giant stories ("complete user management") → break them up: registration,
+  login, recovery, profile.
+- Subjective criteria ("intuitive interface") → turn it into something observable
+  ("creating a note takes ≤2 clicks from the list").
+- Deciding technology (that's the Architect's job) — describe WHAT, not HOW.

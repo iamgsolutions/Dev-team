@@ -66,7 +66,7 @@ def load_for_role(role: str, project_type: str | None = None) -> str:
             remaining = MAX_PACK_CHARS - total
             if remaining < 400:
                 break
-            text = text[:remaining] + "\n[...recortado por tamaño...]"
+            text = text[:remaining] + "\n[...truncated for size...]"
         parts.append(text)
         total += len(text)
     return "\n\n---\n\n".join(parts)
@@ -87,8 +87,8 @@ def append_lesson(role: str, lesson: str) -> Path:
     f = SKILLS_DIR / f"{role}-lessons.md"
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     if not f.exists():
-        header = (f"# LECCIONES APRENDIDAS — rol {role}\n\n"
-                  "Patrones de fallo destilados de proyectos reales. Evítalos.\n")
+        header = (f"# LESSONS LEARNED — role {role}\n\n"
+                  "Failure patterns distilled from real projects. Avoid them.\n")
         f.write_text(header, encoding="utf-8")
     with f.open("a", encoding="utf-8") as fh:
         fh.write(f"\n- ({stamp}) {lesson.strip()}")

@@ -1,31 +1,31 @@
-# SKILL: Base de datos — esquemas y consultas que aguantan producción
+# SKILL: Database — schemas and queries that survive production
 
-### Diseño de esquema
-- Normaliza hasta 3NF; desnormaliza solo con motivo medido (no "por si acaso").
-- Toda tabla: PK explícita (UUID o bigint autoinc, UNO en todo el proyecto),
-  `created_at`/`updated_at` timezone-aware.
-- Claves foráneas con `ON DELETE` explícito (CASCADE/SET NULL/RESTRICT — decide,
-  no dejes el default). Constraints de unicidad y CHECK para invariantes.
-- Índices: en TODA FK, en columnas de filtros/orden frecuentes, y compuestos
-  para queries reales. No indexes "por si acaso" (ralentizan escrituras).
+### Schema design
+- Normalize to 3NF; denormalize only with a measured reason (not "just in case").
+- Every table: explicit PK (UUID or bigint autoincrement, ONE choice across the
+  whole project), timezone-aware `created_at`/`updated_at`.
+- Foreign keys with explicit `ON DELETE` (CASCADE/SET NULL/RESTRICT — decide,
+  don't leave the default). Uniqueness and CHECK constraints for invariants.
+- Indexes: on EVERY FK, on columns used in frequent filters/ordering, and
+  composite ones for real queries. No "just in case" indexes (they slow writes).
 
-### Migraciones
-- Reversibles (up/down) y pequeñas. Una migración = un cambio lógico.
-- Compatibles hacia atrás cuando hay deploy sin downtime: añade columna nullable
-  → backfill → impón NOT NULL en una migración posterior. Nunca renombres/borres
-  en el mismo paso que el código que aún usa el nombre viejo.
-- Idempotentes en lo posible; nunca dependas de datos concretos de producción.
+### Migrations
+- Reversible (up/down) and small. One migration = one logical change.
+- Backward-compatible when deploying without downtime: add a nullable column
+  → backfill → enforce NOT NULL in a later migration. Never rename/drop in the
+  same step as the code that still uses the old name.
+- Idempotent where possible; never depend on specific production data.
 
-### Consultas
-- **Mata el N+1**: en listas, carga relaciones con join/selectin, no en bucle.
-- Paginación por keyset (cursor) para tablas grandes; offset solo en tablas chicas.
-- Transacciones para operaciones multi-escritura; el nivel de aislamiento por
-  defecto del motor salvo razón concreta. Bloqueos cortos.
-- Nunca SQL por concatenación (inyección) — parametrizado/ORM siempre.
-- Mide: una query en un endpoint caliente con `EXPLAIN` si dudas del plan.
+### Queries
+- **Kill the N+1**: in lists, load relations with join/selectin, not in a loop.
+- Keyset (cursor) pagination for large tables; offset only for small tables.
+- Transactions for multi-write operations; the engine's default isolation level
+  unless there's a concrete reason. Keep locks short.
+- Never build SQL by concatenation (injection) — always parameterized/ORM.
+- Measure: run `EXPLAIN` on a query in a hot endpoint if you doubt the plan.
 
-### Datos
-- Migraciones de datos separadas de las de esquema.
-- Seeds realistas y coherentes para demo/test (no "asdf").
-- Borrado: soft-delete (`deleted_at`) si hay que auditar o recuperar; hard-delete
-  para datos personales que el usuario pide eliminar (GDPR).
+### Data
+- Data migrations kept separate from schema migrations.
+- Realistic, coherent seeds for demo/test (not "asdf").
+- Deletion: soft-delete (`deleted_at`) when you need to audit or recover;
+  hard-delete for personal data the user asks to erase (GDPR).

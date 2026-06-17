@@ -1,18 +1,18 @@
-# SKILL: Debugging sistemático — diagnóstico antes que parche
+# SKILL: Systematic debugging — diagnosis before patch
 
-1. **Reproduce primero**: sin reproducción fiable no hay arreglo fiable.
-   Reduce al caso mínimo (¿falla con un solo registro? ¿sin auth?).
-2. **Lee el error ENTERO**: la última línea del traceback dice QUÉ, las
-   primeras dicen DÓNDE empezó. El error real suele ser el PRIMERO de la
-   cadena, no el último síntoma.
-3. **Una hipótesis cada vez**: formula ("el 404 viene de X porque Y"),
-   verifica con UN cambio/log, descarta o confirma. Cambiar 5 cosas a la
-   vez = no saber cuál arregló (o rompió) qué.
-4. **Bisección**: ¿funcionaba antes? `git log` del archivo; aísla el commit.
-   ¿Funciona la capa de abajo? Prueba la query/el service directo sin el router.
-5. **El bug arreglado exige**: (a) entender POR QUÉ pasaba (no "ya no pasa"),
-   (b) test de regresión, (c) buscar el MISMO patrón en el resto del código
-   (los bugs vienen en familias).
-6. **Si 30 min sin avanzar**: para, escribe en NOTES.md qué probaste y qué
-   descartaste, y replantea (¿la suposición base es falsa?). Insistir a
-   ciegas quema tokens sin información nueva.
+1. **Reproduce first**: without a reliable repro there is no reliable fix.
+   Reduce to the minimal case (does it fail with a single record? without auth?).
+2. **Read the WHOLE error**: the last line of the traceback says WHAT, the
+   first ones say WHERE it started. The real error is usually the FIRST in the
+   chain, not the last symptom.
+3. **One hypothesis at a time**: state it ("the 404 comes from X because Y"),
+   verify with ONE change/log, rule it out or confirm. Changing 5 things at
+   once = not knowing which one fixed (or broke) what.
+4. **Bisection**: did it work before? `git log` on the file; isolate the commit.
+   Does the layer below work? Test the query/the service directly without the router.
+5. **The fixed bug demands**: (a) understanding WHY it happened (not "it no
+   longer happens"), (b) a regression test, (c) searching for the SAME pattern in
+   the rest of the code (bugs come in families).
+6. **If 30 min without progress**: stop, write in NOTES.md what you tried and what
+   you ruled out, and rethink (is the base assumption false?). Pushing blindly
+   burns tokens without new information.

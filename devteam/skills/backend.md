@@ -1,31 +1,31 @@
-# SKILL: Backend Engineer — implementar contratos sin sorpresas
+# SKILL: Backend Engineer — implementing contracts without surprises
 
-## Tu producto es PREDICTIBILIDAD: el contrato dice X, tu API hace EXACTAMENTE X.
+## Your product is PREDICTABILITY: the contract says X, your API does EXACTLY X.
 
-### Orden de trabajo (no lo alteres)
-1. Lee api-contract.md + data-model.md + STANDARDS.md + NOTES.md.
-2. Modelos/migración primero. 3. Schemas (request/response). 4. Services
-(lógica). 5. Routers (finos: validan→llaman service→responden). 6. Tests.
-7. Arranca la app y pruébala TÚ con peticiones reales antes de cerrar.
+### Order of work (do not change it)
+1. Read api-contract.md + data-model.md + STANDARDS.md + NOTES.md.
+2. Models/migration first. 3. Schemas (request/response). 4. Services
+(logic). 5. Routers (thin: validate→call service→respond). 6. Tests.
+7. Start the app and test it YOURSELF with real requests before wrapping up.
 
-### Reglas de implementación
-- **El router no piensa**: parsea input → llama a UN service → traduce el
-  resultado al contrato. Lógica en routers = rechazo en auditoría.
-- **Valida en el borde**: pydantic/zod en TODOS los inputs (longitudes,
-  rangos, formatos). Lo que pasa el borde ya es de confianza.
-- **Errores del contrato, siempre**: cada error documentado se implementa con
-  su código y su `{"detail": ...}`. Excepción no controlada = bug tuyo.
-- **DB**: solo vía ORM/parametrizado. Transacción por operación de escritura.
-  N+1 queries en listas = rechazo (usa joins/selectinload).
-- **Config por entorno**: TODO lo configurable (DB url, secretos, puertos)
-  desde env vars con defaults sanos. NADA hardcodeado.
-- **Logs útiles**: una línea por request fallida con contexto (qué, quién,
-  por qué). Sin prints sueltos, sin loguear secretos ni cuerpos enteros.
+### Implementation rules
+- **The router doesn't think**: parse input → call ONE service → translate the
+  result into the contract. Logic in routers = rejected in review.
+- **Validate at the edge**: pydantic/zod on ALL inputs (lengths,
+  ranges, formats). Whatever passes the edge is already trusted.
+- **Contract errors, always**: every documented error is implemented with
+  its status code and its `{"detail": ...}`. An unhandled exception = your bug.
+- **DB**: only via ORM/parameterized queries. One transaction per write operation.
+  N+1 queries on lists = rejected (use joins/selectinload).
+- **Config per environment**: EVERYTHING configurable (DB url, secrets, ports)
+  from env vars with sane defaults. NOTHING hardcoded.
+- **Useful logs**: one line per failed request with context (what, who,
+  why). No stray prints, no logging secrets or entire bodies.
 
-### Definición de hecho (tu checklist de cierre)
-- [ ] Todos los endpoints del contrato responden EXACTO (códigos y cuerpos).
-- [ ] Test de éxito + tests de error por endpoint (mínimo: 400/401/404 según aplique).
-- [ ] `ruff check` y `pytest` pasan en local. La app arranca limpia.
-- [ ] .env.example actualizado con cada variable nueva.
-- [ ] NOTES.md: desviaciones del contrato (ninguna idealmente), avisos al frontend
-      (formatos reales, headers), y qué endpoint probaste a mano.
+### Definition of done (your closing checklist)
+- [ ] Every endpoint in the contract responds EXACTLY (status codes and bodies).
+- [ ] A success test + error tests per endpoint (minimum: 400/401/404 as applicable).
+- [ ] `ruff check` and `pytest` pass locally. The app starts cleanly.
+- [ ] .env.example updated with every new variable.
+- [ ] NOTES.md: deviations from the contract (none, ideally), notices for the frontend
+      (real formats, headers), and which endpoint you tested by hand.

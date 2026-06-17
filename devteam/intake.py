@@ -20,36 +20,38 @@ from .state import Project, registry_add
 # so these rules apply on every invocation - belt AND suspenders with the
 # engine's 4-block instructions. Source: mg-kb/build/05-agent-rules.md.
 AGENTS_MD = """\
-# AGENTS.md - Reglas del equipo (obligatorias para TODO agente en este repo)
+# AGENTS.md - Team rules (mandatory for EVERY agent in this repo)
 
-Trabajas dentro del equipo de desarrollo 24/7 de MG, dirigido por el motor
-`devteam`. Estas reglas aplican SIEMPRE, ademas de la instruccion que recibas:
+You work inside MG's 24/7 development team, run by the `devteam`
+engine. These rules ALWAYS apply, in addition to the instruction you receive:
 
-1. Eres STATELESS. Lee `.project-memory/STATE.md` y `.project-memory/NOTES.md`
-   antes de actuar. El brief esta en `BRIEF.md`; los contratos en `docs/`.
-2. ANTES DE CERRAR actualiza `.project-memory/STATE.md` (que hiciste, que
-   queda) y `.project-memory/NOTES.md` (decisiones, dudas, avisos al
-   siguiente agente). Sin esto tu tarea NO esta completa.
-3. Cinete a la tarea encargada. No "mejores" cosas no pedidas.
-4. NUNCA escribas secretos (claves, tokens) en codigo, commits o logs.
-   Usa variables de entorno (.env esta en .gitignore).
-5. Tu salida debe compilar y pasar lint y tests. Escribe tests de lo que
-   produces.
-6. Codigo, identificadores y commits en INGLES. Documentacion en ESPANOL.
-7. Sigue las decisiones de `docs/architecture.md` y `docs/api-contract.md`
-   EXACTAMENTE. Si crees que hay un error, anotalo en NOTES.md - no lo
-   cambies por tu cuenta.
-8. Trabaja solo en este directorio. No toques otros proyectos ni el sistema.
-9. Commits convencionales: feat:/fix:/test:/docs:/chore:.
-10. HONESTIDAD: si algo no funciona o no es posible, dilo claramente en
-    NOTES.md. No finjas exito.
+1. You are STATELESS. Read `.project-memory/STATE.md` and `.project-memory/NOTES.md`
+   before acting. The brief is in `BRIEF.md`; the contracts in `docs/`.
+2. BEFORE FINISHING update `.project-memory/STATE.md` (what you did, what is
+   left) and `.project-memory/NOTES.md` (decisions, doubts, warnings for the
+   next agent). Without this your task is NOT complete.
+3. Stick to the assigned task. Do not "improve" things that were not asked for.
+4. NEVER write secrets (keys, tokens) in code, commits or logs.
+   Use environment variables (.env is in .gitignore).
+5. Your output must compile and pass lint and tests. Write tests for what you
+   produce.
+6. Code, identifiers and commits in ENGLISH. Documentation in ENGLISH.
+7. Follow the decisions in `docs/architecture.md` and `docs/api-contract.md`
+   EXACTLY. If you think there is an error, note it in NOTES.md - do not
+   change it on your own.
+8. Work only in this directory. Do not touch other projects or the system.
+9. Conventional commits: feat:/fix:/test:/docs:/chore:.
+10. HONESTY: if something does not work or is not possible, say it clearly in
+    NOTES.md. Do not fake success.
 """
 
-# critical sections: without these we go to clarification
+# critical sections: without these we go to clarification. Bilingual patterns -
+# the brief may arrive in Spanish (legacy templates) or English (the team's
+# working language), so each regex matches the headers in either language.
 CRITICAL_PATTERNS = {
-    "objetivo": r"##\s*2?\.?\s*Objetivo|qué problema",
-    "funcionalidades": r"##\s*3?\.?\s*Funcionalidades",
-    "criterios": r"criterios de éxito|## 10",
+    "objetivo": r"##\s*2?\.?\s*(objetivo|objective)|qué problema|what problem",
+    "funcionalidades": r"##\s*3?\.?\s*(funcionalidades|features)",
+    "criterios": r"criterios de éxito|success criteria|## 10",
 }
 
 
@@ -58,37 +60,42 @@ def validate_brief(brief_text: str) -> list[str]:
     questions = []
     low = brief_text.lower()
     if not re.search(CRITICAL_PATTERNS["objetivo"], low, re.IGNORECASE):
-        questions.append("¿Cuál es el objetivo del proyecto y qué problema resuelve?")
+        questions.append("What is the project's objective and what problem does it solve?")
     if not re.search(CRITICAL_PATTERNS["funcionalidades"], low, re.IGNORECASE):
-        questions.append("¿Qué funcionalidades debe tener (al menos las imprescindibles)?")
+        questions.append("What features must it have (at least the essential ones)?")
     if not re.search(CRITICAL_PATTERNS["criterios"], low, re.IGNORECASE):
-        questions.append("¿Cuáles son los criterios de éxito verificables ('terminado cuando...')?")
+        questions.append("What are the verifiable success criteria ('done when...')?")
     return questions
 
 
 def extract_name(brief_text: str, fallback: str = "project") -> str:
-    m = re.search(r"\*\*Nombre.*?:\*\*\s*(.+)", brief_text)
+    # Bilingual: match the Spanish ("Nombre") or English ("Name") project field,
+    # and the Spanish or English brief title.
+    m = re.search(r"\*\*(?:Nombre|Name).*?:\*\*\s*(.+)", brief_text)
     if m:
         return worktree.slugify(m.group(1).strip())
-    m = re.search(r"#\s*Brief de Proyecto\s*[—-]\s*(.+)", brief_text)
+    m = re.search(r"#\s*(?:Brief de Proyecto|Project Brief)\s*[—-]\s*(.+)", brief_text)
     if m:
         return worktree.slugify(m.group(1).strip())
     return fallback
 
 
 def extract_budget_cap(brief_text: str) -> float:
-    m = re.search(r"Tope de gasto.*?\$?(\d+(?:[.,]\d+)?)", brief_text)
+    # Bilingual: "Tope de gasto" (ES) or "Spending cap"/"Budget cap" (EN).
+    m = re.search(r"(?:Tope de gasto|Spending cap|Budget cap).*?\$?(\d+(?:[.,]\d+)?)", brief_text)
     if m:
         return float(m.group(1).replace(",", "."))
     return config.DEFAULT_BUDGET_CAP_USD
 
 
 def detect_project_type(text: str) -> str:
-    """Infer web | api | mobile from the brief (drives project-type skills)."""
+    """Infer web | api | mobile from the brief (drives project-type skills).
+
+    Bilingual keywords so it works whether the brief is in Spanish or English."""
     low = text.lower()
-    if re.search(r"\bapp m[oó]vil|react native|expo|android|ios|aplicaci[oó]n m[oó]vil|móvil\b", low):
+    if re.search(r"\bapp m[oó]vil|mobile app|react native|expo|android|ios|aplicaci[oó]n m[oó]vil|móvil\b", low):
         return "mobile"
-    if re.search(r"\b(api|backend) (rest|pura|sola)|solo (api|backend)|microservicio\b", low):
+    if re.search(r"\b(api|backend) (rest|pura|sola|only|standalone)|solo (api|backend)|(api|backend) only|microservicio|microservice\b", low):
         return "api"
     return "web"
 
@@ -137,9 +144,9 @@ def new_project(
     )
     project.save()
     if questions:
-        project.transition("clarification", "brief incompleto: preguntas al humano")
+        project.transition("clarification", "incomplete brief: questions for the human")
     else:
-        project.transition("pm", "brief válido: arranca PM")
+        project.transition("pm", "valid brief: PM starts")
     registry_add(project)
     worktree.commit_all(project_path, "chore: project intake (brief + memory)")
     return project, questions

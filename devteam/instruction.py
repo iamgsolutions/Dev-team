@@ -17,10 +17,10 @@ class MalformedInstruction(Exception):
 
 
 PREAMBLE = (
-    "You are a coding agent (role: {role}) operating in the MG system.\n"
+    "You are a coding agent (role: {role}) operating in the dev-team system.\n"
     "You are STATELESS: everything you need is in the memory files, and everything\n"
     "you do must be written down before finishing. You follow the team's universal\n"
-    "rules (mg-kb/build/05-agent-rules.md): do not go out of scope, do not expose\n"
+    "rules (see AGENTS.md in the repo): do not go out of scope, do not expose\n"
     "secrets, code/commits in English, honesty if something does not work."
 )
 

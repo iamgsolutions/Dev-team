@@ -1,9 +1,8 @@
 """Project intake (S1) - create a project from a markdown brief.
 
-Validates the brief has the minimum sections of the template
-(mg-kb/templates/project-brief-template.md); missing critical info sends the
-project to 'clarification' with grouped questions (spec R1/R12) instead of
-building on assumptions.
+Validates the brief has the minimum template sections; missing critical info
+sends the project to 'clarification' with grouped questions (spec R1/R12)
+instead of building on assumptions.
 """
 from __future__ import annotations
 
@@ -18,11 +17,11 @@ from .state import Project, registry_add
 # Universal team rules, written into every project repo. The three coding
 # CLIs (claude/codex/opencode) auto-read AGENTS.md from the working directory,
 # so these rules apply on every invocation - belt AND suspenders with the
-# engine's 4-block instructions. Source: mg-kb/build/05-agent-rules.md.
+# engine's 4-block instructions. These rules are self-contained below.
 AGENTS_MD = """\
 # AGENTS.md - Team rules (mandatory for EVERY agent in this repo)
 
-You work inside MG's 24/7 development team, run by the `devteam`
+You work inside a 24/7 development team, run by the `devteam`
 engine. These rules ALWAYS apply, in addition to the instruction you receive:
 
 1. You are STATELESS. Read `.project-memory/STATE.md` and `.project-memory/NOTES.md`

@@ -1,68 +1,85 @@
-# Deploy Kit — Replicar el equipo de desarrollo en un servidor nuevo
+# Deploy Kit — Replicate the dev-team engine on a new server
 
-Guía para levantar el equipo completo (motor `devteam` + cerebros + skill de Hermes) en otra máquina. Tiempo estimado: 20-40 min, la mayoría en logins.
+Guide to stand up the engine (`devteam`) plus the coding brains on another
+machine. Estimated time: 20–40 min, most of it spent on logins.
 
-## Requisitos del servidor
+> This kit installs the **engine only** — no private data, no secrets. Each
+> operator brings their own brain logins (API keys / subscriptions). Project
+> memory lives inside each project repo, not here.
 
-- Windows Server 2022/2025 (o Windows 11). *(Linux: el motor es Python puro y funciona; los scripts de este kit son PowerShell — portar es trivial, ver nota al final.)*
-- Acceso a internet y RDP/SSH para los logins.
-- **No necesita GPU.** Los cerebros son servicios externos.
+## Server requirements
 
-## Instalación automática
+- Windows Server 2022/2025 (or Windows 11). *(Linux: the engine is pure Python
+  and runs fine; the scripts in this kit are PowerShell — porting is trivial,
+  see the note at the end.)*
+- Internet access and RDP/SSH for the logins.
+- **No GPU required.** The brains are external services.
+
+## Automatic install
 
 ```powershell
-# desde PowerShell como Administrador, en la carpeta del kit:
+# from PowerShell as Administrator, in the kit folder:
 .\setup.ps1
 ```
 
-El script (idempotente, se puede re-ejecutar):
-1. Verifica/instala: Node.js LTS, Git, GitHub CLI (winget), uv.
-2. Instala las CLIs de cerebros: `@anthropic-ai/claude-code`, `@openai/codex`, `opencode-ai` (npm -g).
-3. Clona los repos: motor (`hermes-dev-team`) y memoria (`memoria-desarrollo-hermes`).
-4. Crea el venv del motor con uv e instala dependencias; ejecuta los tests.
-5. Crea la estructura: `C:\Users\<user>\dev\projects\`, `dev\briefs\`.
-6. Si detecta una instalación de Hermes, copia la skill `devteam-engine` a sus skills.
+The script (idempotent, safe to re-run):
+1. Verifies/installs: Node.js LTS, Git, GitHub CLI (winget), uv.
+2. Installs the brain CLIs: `@anthropic-ai/claude-code`, `@openai/codex`,
+   `opencode-ai`, `@google/gemini-cli` (npm -g).
+3. Clones the engine repo (`Dev-team`). Override the URL with
+   `$env:DEVTEAM_REPO` if you forked it.
+4. Creates the engine venv with uv, installs dependencies, runs the tests.
+5. Creates the working structure: `dev\projects\`, `dev\briefs\`.
 
-## Pasos manuales (logins — siempre humanos)
+## Manual steps (logins — always human)
 
 ```powershell
-gh auth login          # GitHub: si el navegador falla, usar token PAT (ver HUMAN-LOGINS.md)
-claude auth login      # Anthropic (suscripción)
-codex login            # ChatGPT (suscripción)
-opencode auth login    # pegar API key de OpenRouter (sk-or-...)
+gh auth login          # GitHub: if the browser flow fails, use a PAT
+claude auth login      # Anthropic (subscription)
+codex login            # ChatGPT (subscription)
+opencode auth login    # paste your OpenRouter API key (sk-or-...)
+gemini                 # Login with Google, then /quit   (optional 4th brain)
 ```
 
-Verificación: `claude auth status`, `codex login status`, `opencode auth list`, `gh auth status`.
+Verify: `claude auth status`, `codex login status`, `opencode auth list`,
+`gh auth status`.
 
-## Configuración del guardián de suscripciones
+## Subscription guardian configuration
 
-Por defecto el motor raciona: 15 llamadas/día a Claude, 20 a Codex. Ajustar según el uso humano de esa cuenta:
+By default the engine rations premium brains: 15 calls/day for Claude, 20 for
+Codex (Gemini is disabled by default). Tune it to how the human uses that same
+account interactively:
 
 ```powershell
-C:\Users\<user>\dev\hermes-dev-team\.venv\Scripts\python.exe -m devteam.cli subs --set claude 10
+$py = "$env:USERPROFILE\dev\Dev-team\.venv\Scripts\python.exe"
+& $py -m devteam.cli subs --set claude 10
 ```
 
-## Verificación final (smoke)
+## Final smoke check
 
 ```powershell
-$py = "C:\Users\<user>\dev\hermes-dev-team\.venv\Scripts\python.exe"
-& $py -m pytest -q                                    # suite del motor (en el dir del motor)
-& $py -m devteam.cli new-project ..\memoria-desarrollo-hermes\build\examples\example-brief.md
-& $py -m devteam.cli run-task notes --role backend --task "Create hello.md with: Hello" --criteria "hello.md exists"
+$py = "$env:USERPROFILE\dev\Dev-team\.venv\Scripts\python.exe"
+& $py -m pytest -q                                    # engine suite (run in the engine dir)
+& $py -m devteam.cli doctor                           # full harness health check
+& $py -m devteam.cli run-task demo --role backend --task "Create hello.md with: Hello" --criteria "hello.md exists"
 & $py -m devteam.cli status
 ```
 
-## Para tener VARIOS equipos en un mismo servidor
+## Running SEVERAL teams on one server
 
-Cada equipo = una copia del motor con su propio `DEVTEAM_DATA` y `DEVTEAM_PROJECTS` (variables de entorno que el motor respeta):
+Each team = one copy of the engine with its own `DEVTEAM_DATA` and
+`DEVTEAM_PROJECTS` (environment variables the engine honors):
 
 ```powershell
-$env:DEVTEAM_DATA = "C:\teams\equipo2\data"
-$env:DEVTEAM_PROJECTS = "C:\teams\equipo2\projects"
+$env:DEVTEAM_DATA = "C:\teams\team2\data"
+$env:DEVTEAM_PROJECTS = "C:\teams\team2\projects"
 ```
 
-Con eso, registros, presupuestos y proyectos quedan completamente aislados por equipo.
+With that, registries, budgets and projects are fully isolated per team.
 
-## Nota Linux
+## Linux note
 
-El motor (`devteam`) es Python 3.11 puro sin dependencias de Windows (la resolución de CLIs detecta `.cmd` solo si existe). Las CLIs de cerebros tienen instaladores Linux oficiales. Cambiar rutas de `config.py` vía variables de entorno y portar `setup.ps1` a bash (~30 líneas).
+The engine (`devteam`) is pure Python 3.11 with no Windows-only dependencies
+(CLI resolution detects `.cmd` wrappers only if they exist). The brain CLIs all
+ship official Linux installers. Point `config.py` paths via environment
+variables and port `setup.ps1` to bash (~30 lines).

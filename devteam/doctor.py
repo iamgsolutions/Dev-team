@@ -1,14 +1,13 @@
 """System doctor - end-to-end health check of the harness (no token spend).
 
 Verifies every connection the team depends on BEFORE work starts, so system
-failures surface as a clear report instead of mid-task crashes (human's
-mandate: "que el harness y las conexiones sean seguras, que no haya fallos
-de sistema"). All checks are passive/cheap: no LLM calls.
+failures surface as a clear report instead of mid-task crashes (mandate: the
+harness and its connections must be safe, with no silent system failures). All
+checks are passive/cheap: no LLM calls.
 """
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -37,13 +36,23 @@ def _run(args: list[str], timeout: int = 20) -> tuple[int, str]:
 
 def run_doctor() -> list[Check]:
     checks: list[Check] = []
-    home = Path(os.environ.get("USERPROFILE", r"C:\Users\Administrator"))
+    home = Path.home()
 
     # 1. CLIs resolvable (the four brains + git)
     for cli in ("claude", "codex", "opencode", "gemini", "git"):
         path = config.resolve_cli(cli)
         ok = shutil.which(path) is not None or Path(path).exists()
         checks.append(Check(f"cli:{cli}", ok, path if ok else "NOT FOUND"))
+
+    # 1b. jcode (optional experimental brain) - informational, never fails doctor
+    try:
+        from .brains.jcode import _jcode_exe
+        jp = _jcode_exe()
+        found = Path(jp).exists() or shutil.which(jp) is not None
+        checks.append(Check("cli:jcode (optional)", True,
+                            jp if found else "not installed (optional brain)"))
+    except Exception as e:  # noqa: BLE001
+        checks.append(Check("cli:jcode (optional)", True, f"n/a: {type(e).__name__}"))
 
     # 2. Cached credentials present (passive - no API calls)
     cred_files = {
@@ -69,7 +78,7 @@ def run_doctor() -> list[Check]:
         from .discord_listener import listener_available
         ok = listener_available()
         checks.append(Check("discord:listener", ok,
-                            "bot token disponible" if ok else "DISCORD_BOT_TOKEN no encontrado en .env de Hermes"))
+                            "bot token available" if ok else "DISCORD_BOT_TOKEN not found in Hermes' .env"))
     except Exception as e:  # noqa: BLE001
         checks.append(Check("discord:listener", False, str(e)[:120]))
 
@@ -108,6 +117,6 @@ def format_report(checks: list[Check]) -> str:
         lines.append(f"[{mark}] {c.name:<18} {c.detail}")
     bad = sum(1 for c in checks if not c.ok)
     lines.append("")
-    lines.append("SISTEMA SANO - todo conectado" if bad == 0
-                 else f"{bad} problema(s) - revisar antes de trabajar")
+    lines.append("SYSTEM HEALTHY - everything connected" if bad == 0
+                 else f"{bad} issue(s) - review before working")
     return "\n".join(lines)

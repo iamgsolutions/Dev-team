@@ -1,20 +1,24 @@
-# replicate.ps1 - empaqueta el equipo completo en un zip portable (sin venv/data/secrets).
-# Resultado en el Escritorio. En el servidor destino: descomprimir y ejecutar
-# hermes-dev-team\deploy-kit\setup.ps1
+# replicate.ps1 - package the engine into a portable zip (no venv/data/secrets).
+# Output lands on the Desktop. On the target server: unzip and run
+#   Dev-team\deploy-kit\setup.ps1
+#
+# This packages the ENGINE ONLY. No private memory, no .env, no secrets - by
+# design, so the zip is safe to hand to a collaborator.
 
-$stamp = Get-Date -Format "yyyyMMdd-HHmm"
-$out = "$env:USERPROFILE\Desktop\devteam-kit-$stamp.zip"
+$ErrorActionPreference = "Stop"
+# Engine root = parent of this deploy-kit folder (works wherever the repo lives).
+$EngineRoot = Split-Path -Parent $PSScriptRoot
+$EngineName = Split-Path -Leaf $EngineRoot
+
+$stamp   = Get-Date -Format "yyyyMMdd-HHmm"
+$out     = "$env:USERPROFILE\Desktop\devteam-kit-$stamp.zip"
 $staging = Join-Path $env:TEMP "devteam-kit-$stamp"
 New-Item -ItemType Directory -Force $staging | Out-Null
 
-# Motor (sin runtime ni secretos)
-robocopy "C:\Users\Administrator\dev\hermes-dev-team" "$staging\hermes-dev-team" /E `
+# Engine, without runtime or secrets.
+robocopy $EngineRoot "$staging\$EngineName" /E `
     /XD .venv data .git __pycache__ .pytest_cache node_modules /XF .env *.log | Out-Null
-
-# Memoria del equipo (documentacion build/ incluida; sin transcripts pesados)
-robocopy "C:\Users\Administrator\AppData\Local\hermes\mg-kb" "$staging\memoria-desarrollo-hermes" /E `
-    /XD .git /XF *.jsonl | Out-Null
 
 Compress-Archive -Path "$staging\*" -DestinationPath $out -Force
 Remove-Item $staging -Recurse -Force
-Write-Host "Kit portable creado: $out" -ForegroundColor Green
+Write-Host "Portable kit created: $out" -ForegroundColor Green

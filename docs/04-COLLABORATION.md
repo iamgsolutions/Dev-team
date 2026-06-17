@@ -17,9 +17,18 @@ tokens, customer data, server IPs or operator paths — those live outside it
 this, but contributors must respect it too.
 
 ## Language: English everywhere in this repo
-All code, comments, agent prompts, skills, rules and docs are English. Operator
-notifications (the Discord channel a Spanish-speaking operator reads) may remain
-localized, but anything an IDA developer or an agent reads is English.
+All code, comments, agent prompts, skills, rules, docs **and operator
+notifications** (the Discord milestones/blockers) are English. The only Spanish
+that remains is inside a few command **parsers** kept bilingual on purpose, so
+existing Spanish projects/briefs still work (audit verdicts, the Discord command
+words, brief headings, the STATE header). Everything a human or an agent *reads*
+is English.
+
+## Scope: the agent system is internal (MG + IDA)
+The orchestrator is an **internal tool** for MG and IDA — it is not sold to
+clients. What gets sold is the *software the team builds*. This is why
+multi-tenant/client-isolation is out of scope (see `03-ROADMAP.md` item K) and
+why sandboxing (item I) is framed as internal safety, not a sales gate.
 
 ## Workflow
 1. **Branch + PR per task** (`task/<slug>` or `feat/<slug>`). One intention per PR.

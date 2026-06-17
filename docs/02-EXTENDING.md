@@ -61,8 +61,23 @@ To make an MCP available:
 2. Declare it in the relevant presets' `mcps` list (documentation + future
    auto-wiring).
 
-Recommended MCPs for this system: `github` (repos/PRs), `postgres` (schema/
-queries), `filesystem`, `playwright` (E2E), `docker`, plus project-specific ones.
+### Standard MCP set (the team's default toolbelt)
+
+These are the MCPs we standardize on, and which roles declare them. Configure
+them once per machine in each brain CLI; presets reference them by name.
+
+| MCP | Purpose | Roles that use it |
+|---|---|---|
+| `filesystem` | scoped file read/write in the worktree | all |
+| `github` | repos, branches, PRs, issues | architect, deploy, review |
+| `postgres` | inspect schema, run queries against the project DB | backend, qa |
+| `playwright` | drive a real browser for E2E | qa, frontend |
+| `docker` | build/run containers, compose | deploy |
+| `fetch` / `web` | read docs/specs/URLs the brief points to | pm, architect |
+
+Project-specific MCPs (Stripe, a vendor API, etc.) are added per project on top
+of this base. Keep the set small and least-privilege: an agent should only get
+the tools its role needs.
 
 ## 5. Add a BRAIN (a new model provider)
 
@@ -74,6 +89,10 @@ queries), `filesystem`, `playwright` (E2E), `docker`, plus project-specific ones
    `subscription.GUARDED_BRAINS` + a daily ration.
 3. Wire routing in `router.py` (when it should be chosen).
 4. Tests.
+
+**Worked example:** `devteam/brains/jcode.py` is a complete, tested brain added
+this way (multi-provider Rust harness). See `docs/jcode.md` for the rationale and
+the benchmark-before-promoting plan.
 
 ## 6. Golden rules for contributors
 - The engine is deterministic on purpose. Put intelligence in prompts/skills,

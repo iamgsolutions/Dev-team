@@ -15,6 +15,10 @@ Read in order:
 5. **[04-COLLABORATION.md](04-COLLABORATION.md)** — how we work together (repos,
    English-only, workflow, onboarding).
 
+Reference notes:
+- **[jcode.md](jcode.md)** — evaluation of the jcode brain (why it's integrated,
+  risks, how it's wired, and the benchmark plan before promoting it).
+
 ## TL;DR for a new developer
 - Python 3.11. `uv venv && uv pip install -e ".[dev]"` then `pytest -q` (must pass).
 - The engine is in `devteam/`. The spine is `executor.py`; the flow is `pipeline.py`.

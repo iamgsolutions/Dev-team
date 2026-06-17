@@ -5,6 +5,21 @@
 > value, and who is well-placed to lead it (IDA = the 35-dev partner team; MG =
 > us). These are proposals to discuss and prioritize together.
 
+## Strategic frame & decisions (2026-06-17)
+
+**The agent system is an internal tool for MG + IDA — it is NOT sold to
+clients.** What we sell is the *software the team builds*, not the orchestrator
+itself. This changes two items: multi-tenant/client-isolation (**K**) is **not
+pursued**, and sandboxing (**I**) is reframed from "needed before selling" to
+"needed to run agent shell/code safely at scale internally".
+
+Greenlit for the joint build: **A, B, C, D, E, F, G (now, with Obsidian), H, J**
+plus the agent **presets** and a **standard MCP set**. Leadership: the
+orchestration core (**B, F**) is MG-led with IDA; the scale/infra items
+(**A, C, D, I**) are IDA-led; **E, G, J** are shared. **jcode** has been added as
+an optional brain — it directly supports **A** (low-RAM, fast → more parallel
+workers) and **G** (built-in semantic memory); see `docs/jcode.md`.
+
 ## A. Parallelism & scale  ★★★ complexity / ★★★ value
 The biggest multiplier. Today: one project, sequential phases.
 - **Intra-project parallelism**: PM/Architect produce a task DAG; independent
@@ -51,11 +66,13 @@ brief, assembles a solution from catalog components + builds only the gap, and
 learns which compositions work. This is the productization core (ADR-010).
 - Lead: MG + IDA.
 
-## G. Semantic memory / RAG  ★★ / ★★
+## G. Semantic memory / RAG  ★★ / ★★  — greenlit NOW, with Obsidian
 Vector store over past projects, decisions and the catalog so agents retrieve
 "how did we solve X before". Today memory is markdown + FTS-style; add embeddings
-when project volume justifies it.
-- Lead: IDA.
+now. Decision: build it on **Obsidian** as the knowledge base (markdown vault →
+embeddings → retrieval). **jcode**'s built-in semantic memory is a candidate
+backend to evaluate here.
+- Lead: IDA + MG.
 
 ## H. Model evaluation harness  ★★ / ★★
 Objectively benchmark models per role (same tasks, compare success/cost/latency)
@@ -66,7 +83,9 @@ scorecard + presets are the foundation.
 ## I. Security & sandboxing  ★★★ / ★★★
 Agents run shell/code; harden it: run each brain in a container/jail with least
 privilege, supply-chain checks on generated deps (OSV), SAST on generated code,
-secret-scanning already in gates — extend it. Critical before selling to clients.
+secret-scanning already in gates — extend it. The system is internal (MG + IDA),
+so this is about running agent-generated shell/code safely as we scale
+parallelism — not a precondition for selling.
 - Lead: **IDA** (security engineering).
 
 ## J. Human-in-the-loop UX  ★ / ★★
@@ -74,10 +93,11 @@ Richer control surface beyond Discord: web approvals, diffs, the ability to
 steer mid-project, mobile notifications.
 - Lead: IDA (frontend).
 
-## K. Multi-tenant / client isolation  ★★ / ★★★
-To sell: per-client isolation (data, secrets, repos, budgets), white-label
-deploys, audit trails per tenant. The engine is single-tenant today.
-- Lead: MG + IDA.
+## K. Multi-tenant / client isolation  —  NOT pursued
+Dropped by decision (2026-06-17): the agent system is **internal to MG + IDA and
+never sold to clients**, so per-tenant isolation / white-labeling is out of
+scope. (Per-*project* budget/data isolation already exists via `DEVTEAM_DATA` /
+`DEVTEAM_PROJECTS`.)
 
 ---
 
@@ -86,7 +106,8 @@ deploys, audit trails per tenant. The engine is single-tenant today.
    throughput multiplier; turns "fast" into "monstrous".
 2. **C — real testing harness.** Quality is what makes the output sellable;
    IDA's strength.
-3. **I — sandboxing/security.** Required before any client work.
+3. **I — sandboxing/security.** Needed to run agent shell/code safely as
+   parallelism scales (internal safety, not a sales gate).
 4. **D — real autonomous deploy.** Closes the loop to "live software".
 
 These four, built in parallel by IDA's specialists while MG drives B/F (the

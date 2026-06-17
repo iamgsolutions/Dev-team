@@ -35,9 +35,14 @@ class AgentPreset:
 # Built-in presets. Swap `model=` to benchmark a different model on the same role.
 # MCPs are advisory: list what the agent benefits from (github, postgres, fs...).
 BUILTIN: dict[str, AgentPreset] = {
+    # --- Product (requirements, premium) ---
+    "pm-claude": AgentPreset("pm-claude", "pm", config.BRAIN_CLAUDE,
+                             mcps=["filesystem", "fetch"],
+                             notes="Product manager: turns the brief into a PRD. Premium reasoning."),
+
     # --- Architects (design, premium) ---
     "architect-claude": AgentPreset("architect-claude", "architect", config.BRAIN_CLAUDE,
-                                    mcps=["github", "filesystem"],
+                                    mcps=["github", "filesystem", "fetch"],
                                     notes="Primary architect: best design reasoning."),
     "architect-codex": AgentPreset("architect-codex", "architect", config.BRAIN_CODEX,
                                    mcps=["github", "filesystem"],
@@ -74,6 +79,9 @@ BUILTIN: dict[str, AgentPreset] = {
                                 model=config.OPENCODE_FREE_MODELS[1],
                                 mcps=["filesystem"],
                                 notes="Free-tier auditor for non-critical work."),
+    "auditor-jcode": AgentPreset("auditor-jcode", "review", config.BRAIN_JCODE,
+                                 mcps=["filesystem"],
+                                 notes="Experimental: jcode as auditor (benchmark vs free auditor, roadmap H)."),
 
     # --- QA / Tester ---
     "qa-free": AgentPreset("qa-free", "qa", config.BRAIN_OPENCODE,

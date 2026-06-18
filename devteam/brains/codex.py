@@ -17,7 +17,15 @@ def invoke(prompt: str, cwd: Path, timeout_s: int = 1800, model: str | None = No
     # Prompt via STDIN ("-" placeholder): cmd.exe wrappers mangle multiline args.
     # --skip-git-repo-check: the engine controls the cwd (always an isolated
     # worktree), so codex's own trusted-dir check is redundant here.
-    args = ["codex", "exec", "--json", "--skip-git-repo-check"]
+    # --dangerously-bypass-approvals-and-sandbox: let codex actually WRITE files.
+    # In `exec` mode approvals are disabled, so the default read-only sandbox
+    # silently produces NO files (verified 2026-06-18: `--sandbox workspace-write`
+    # alone was ignored; codex reported "sandbox is read-only"). This flag is the
+    # codex equivalent of claude's --dangerously-skip-permissions and is meant for
+    # "environments that are externally sandboxed" - which our isolated git
+    # worktree is (gates + audit + budget bound the blast radius).
+    args = ["codex", "exec", "--json", "--skip-git-repo-check",
+            "--dangerously-bypass-approvals-and-sandbox"]
     if model:
         args += ["--model", model]
     args.append("-")

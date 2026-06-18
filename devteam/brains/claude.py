@@ -21,7 +21,14 @@ def invoke(prompt: str, cwd: Path, timeout_s: int = 1800, model: str | None = No
     # Prompt goes via STDIN: npm .cmd wrappers route args through cmd.exe,
     # which mangles multiline arguments (verified 2026-06-12). `claude -p`
     # reads the prompt from stdin when no positional prompt is given.
-    args = ["claude", "-p", "--output-format", "json"]
+    #
+    # --dangerously-skip-permissions: WITHOUT this, headless `claude -p` cannot
+    # use file-writing tools (Write/Edit/Bash) - it just returns the deliverable
+    # as TEXT and writes nothing to disk (estreno 2026-06-18: pm produced no PRD).
+    # The agent runs in an ISOLATED git worktree (gates + audit + budget cap bound
+    # the blast radius), so autonomous tool use is the intended mode - same as the
+    # OpenCode/Codex workhorses, which are autonomous by default.
+    args = ["claude", "-p", "--output-format", "json", "--dangerously-skip-permissions"]
     if model:
         args += ["--model", model]
     rc, out, err, dur = run_cli(args, cwd, timeout_s, input_text=prompt)

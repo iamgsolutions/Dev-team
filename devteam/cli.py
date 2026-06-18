@@ -134,6 +134,23 @@ def cmd_scorecard(args) -> int:
     return 0
 
 
+def cmd_bench(args) -> int:
+    """Benchmark brains/models on the same task (roadmap H; runs real agents)."""
+    from . import bench
+    configs = None
+    if args.brains:
+        configs = []
+        for spec in args.brains:
+            brain, _, model = spec.partition(":")
+            configs.append((brain, model or None))
+    n = len(configs) if configs is not None else len(bench.DEFAULT_CONFIGS)
+    print(f"Benchmarking {n} config(s) on the same task — this calls REAL agents...")
+    results = bench.run_bench(task=args.task or bench.DEFAULT_TASK, configs=configs,
+                              timeout_s=args.timeout, gate=not args.no_gate)
+    print(bench.format_report(results))
+    return 0
+
+
 def cmd_doctor(args) -> int:
     """Full harness health check (no token spend)."""
     from .doctor import run_doctor, format_report
@@ -323,6 +340,14 @@ def main(argv=None) -> int:
     p.add_argument("--bench", help="send a model to the bench (excluded from fallback)")
     p.add_argument("--unbench", help="bring a model back from the bench")
     p.set_defaults(fn=cmd_scorecard)
+
+    p = sub.add_parser("bench", help="benchmark brains/models on the same task (roadmap H)")
+    p.add_argument("--task", help="the coding task (default: a tiny testable function)")
+    p.add_argument("--brains", nargs="*", metavar="BRAIN[:MODEL]",
+                   help="configs to compare, e.g. opencode:opencode/deepseek-v4-flash-free jcode")
+    p.add_argument("--timeout", type=int, default=600)
+    p.add_argument("--no-gate", action="store_true", help="skip running quality gates on results")
+    p.set_defaults(fn=cmd_bench)
 
     p = sub.add_parser("doctor", help="harness health check (no token spend)")
     p.set_defaults(fn=cmd_doctor)

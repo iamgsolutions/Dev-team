@@ -105,7 +105,7 @@ flowchart TD
 1. **Route** (`router.route`) — which brain (role, criticality, budget, rations).
    If all premium rest → returns "defer".
 2. **Worktree** (`worktree.create`) — isolated branch+folder.
-3. **Snapshot memory** (`memory.snapshot_mtimes`) BEFORE invoking.
+3. **Snapshot memory** (`memory.snapshot_memory`) BEFORE invoking.
 4. **5-block instruction** (`instruction.build` + `skillpack.load_for_role`).
 5. **Invoke** (`brains.get_invoker`) — headless CLI in the worktree.
 6. **Ration** (`subscription.record_call`) — count premium calls; rate limit → rest+defer.

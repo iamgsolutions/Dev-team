@@ -41,12 +41,13 @@ its behavior) for any feature.
 | Brains (headless CLIs) | `devteam/brains/*.py` | `invoke`, `get_invoker` | `tests/test_brains.py` |
 | 5-block instruction | `devteam/instruction.py` | `Instruction.build` | `tests/test_instruction.py` |
 | Skill packs | `devteam/skillpack.py` | `load_for_role` | `tests/test_skillpack.py` |
-| Memory handoff | `devteam/memory.py` | `snapshot_mtimes`, `verify_handoff` | (covered via `test_cascade`/`test_pipeline`) |
+| Memory handoff | `devteam/memory.py` | `snapshot_memory`, `verify_handoff` | `tests/test_memory.py` |
 | Quality gates + secrets scan | `devteam/gates.py` | `run_gates`, `scan_secrets` | `tests/test_gates.py`, `test_audit.py` |
 | Multi-model audit | `devteam/audit.py` | `audit_worktree`, `_parse_verdict` | `tests/test_audit.py` |
 | Subscription guardian (rations) | `devteam/subscription.py` | `available`, `report_rate_limit` | `tests/test_subscription.py` |
 | Budget cap/alert/pause | `devteam/budget.py` | `charge`, `remaining` | `tests/test_budget.py` |
 | Scorecard + auto-bench | `devteam/reflective.py` | `record`, `auto_bench` | `tests/test_reflective.py` |
+| Model/brain benchmark (roadmap H) | `devteam/bench.py` | `run_bench`, `format_report` | `tests/test_bench.py` |
 | Project state machine | `devteam/state.py` | `Project`, `transition` | `tests/test_state.py` |
 | Intake (brief → project) | `devteam/intake.py` | `new_project`, `validate_brief` | `tests/test_intake.py` |
 | Adopt an existing repo | `devteam/adopt.py` | `adopt_project` | `tests/test_adopt.py` |

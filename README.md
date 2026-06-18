@@ -11,12 +11,18 @@ the COLLECTIVE — no single model does the work; the system does.
 
 ## Documentation
 
-Full docs in **[`docs/`](docs/)**:
+Full docs in **[`docs/`](docs/)**. Start with the **[Quickstart](docs/QUICKSTART.md)**
+(clone → first phase in ~10 min), then:
 - [Overview](docs/00-OVERVIEW.md) — what it is, how advanced it is, the goal.
+- [Execution policy](docs/05-EXECUTION-POLICY.md) — exactly which brain/model runs when.
 - [Architecture](docs/01-ARCHITECTURE.md) — how it's programmed, with diagrams.
+- [Glossary](docs/06-GLOSSARY.md) — vocabulary + concept → file → test map.
 - [Extending](docs/02-EXTENDING.md) — add skills, roles, presets, MCPs, brains.
 - [Roadmap](docs/03-ROADMAP.md) — the complex build plan.
 - [Collaboration](docs/04-COLLABORATION.md) — repos, workflow, onboarding.
+
+Contributing: **[CONTRIBUTING.md](CONTRIBUTING.md)** and a list of scoped first
+issues in **[docs/STARTER-TASKS.md](docs/STARTER-TASKS.md)**.
 
 ## Structure
 - `devteam/` — the package. Core: `state`, `budget`, `instruction` (5-block),
@@ -33,6 +39,7 @@ devteam new-project <brief.md> [--name X] [--cap 30]   # start a project
 devteam adopt <repo-path>                              # adopt an existing repo
 devteam status | panel | log | scorecard | doctor      # observe
 devteam presets | catalog | skills                     # inspect the harness
+devteam bench [--brains opencode jcode]                # benchmark models on a task
 devteam run-phase <name> | approve <name>              # drive the pipeline
 devteam daemon --interval 60                            # 24/7 loop
 ```

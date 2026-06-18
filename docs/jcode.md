@@ -49,14 +49,29 @@ It is **not** routed to by default and **not** used as an auditor yet.
 
 ## Next step — benchmark before promoting (roadmap H)
 
-Run the model-evaluation harness with jcode vs OpenCode on the same set of real
-backend/frontend tasks and compare **success rate, cost, latency, and RAM under
-N parallel workers**. Promote jcode to a default workhorse only if it wins on
-throughput-per-dollar without losing quality. Until then it is available for
-opt-in use and experimentation.
+Compare jcode vs OpenCode on the same task and weigh **success rate, cost,
+latency** (and, in practice, RAM under N parallel workers). Promote jcode to a
+default workhorse only if it wins on throughput-per-dollar without losing
+quality. Until then it is available for opt-in use and experimentation.
+
+There is a built-in harness for exactly this — `devteam bench` (see
+`devteam/bench.py`). It runs the same coding task on each config in an isolated
+scratch repo, runs the quality gates on each result, and prints a comparison:
 
 ```powershell
-# smoke test (needs jcode's OpenRouter auth configured once):
+$py = ".venv\Scripts\python.exe"
+# default compares opencode-free vs jcode on a tiny testable task:
+& $py -m devteam.cli bench
+# or pin exactly what to compare:
+& $py -m devteam.cli bench --brains opencode:opencode/deepseek-v4-flash-free jcode
+```
+
+It calls real agents, so run it once the relevant logins are set. Pin a **free**
+OpenRouter model for jcode (`config.DEFAULT_MODELS[BRAIN_JCODE]`) for a fair,
+zero-cost comparison.
+
+```powershell
+# raw jcode smoke test (needs jcode's OpenRouter auth configured once):
 $env:JCODE_NO_TELEMETRY = "1"
-C:\Users\<user>\dev\tools\jcode.exe run --json --quiet -p openrouter -C . "print hello to stdout"
+jcode run --json --quiet -p openrouter -C . "print hello to stdout"
 ```

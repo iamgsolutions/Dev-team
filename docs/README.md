@@ -24,6 +24,11 @@ Then read in order:
 7. **[04-COLLABORATION.md](04-COLLABORATION.md)** — how we work together (repos,
    English-only, workflow, onboarding).
 
+For contributors:
+- **[../CONTRIBUTING.md](../CONTRIBUTING.md)** — dev setup, golden rules, workflow.
+- **[STARTER-TASKS.md](STARTER-TASKS.md)** — scoped first issues mapped to the
+  roadmap, sorted by difficulty.
+
 Reference notes:
 - **[jcode.md](jcode.md)** — evaluation of the jcode brain (why it's integrated,
   risks, how it's wired, and the benchmark plan before promoting it).

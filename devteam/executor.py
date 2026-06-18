@@ -19,7 +19,7 @@ from .brains import BrainResult, get_invoker
 from .brains.opencode import invoke_with_fallback
 from .instruction import Instruction
 from .memory import (memory_paths_for_instruction, memory_update_spec,
-                     read_state, snapshot_mtimes, verify_handoff)
+                     read_state, snapshot_memory, verify_handoff)
 from .router import Route, route
 from .state import Project
 
@@ -102,7 +102,7 @@ def execute_task(
         # snapshot the WORKTREE memory BEFORE invoking - the agent works in the
         # worktree, not the main checkout. (audit fix: was snapshotted after
         # _invoke, forcing a redundant retry on every successful task.)
-        wt_before = snapshot_mtimes(wt_path)
+        wt_before = snapshot_memory(wt_path)
         result = _invoke(rt, prompt, wt_path, timeout_s)
         if rt.brain in subscription.GUARDED_BRAINS:
             subscription.record_call(rt.brain)
@@ -112,6 +112,10 @@ def execute_task(
                 return TaskResult("deferred", rt.brain, result.model, 0.0,
                                   "provider reported a usage limit; brain resting, task deferred",
                                   branch, rt.justification)
+            if result.status in ("error", "timeout"):
+                # Hard failure on a premium brain -> brief rest so the self-heal
+                # cascade advances to the NEXT premium brain, not this same one.
+                subscription.report_error(rt.brain)
 
         # memory handoff enforcement (one retry with explicit warning)
         handoff_ok = verify_handoff(wt_path, wt_before)

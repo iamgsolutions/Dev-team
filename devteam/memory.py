@@ -6,6 +6,7 @@ updated them - if not, the task is NOT complete (hard rule).
 """
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -39,20 +40,30 @@ def init_memory(project_path: Path, project_name: str, brief_summary: str) -> No
     )
 
 
-def snapshot_mtimes(project_path: Path) -> dict[str, float]:
-    """Take mtimes of memory files before an invocation."""
+def _sig(f: Path) -> tuple[float, int, str]:
+    """(mtime, size, sha1) signature of a memory file; (0, -1, '') if missing."""
+    if not f.exists():
+        return (0.0, -1, "")
+    data = f.read_bytes()
+    return (f.stat().st_mtime, len(data), hashlib.sha1(data).hexdigest())
+
+
+def snapshot_memory(project_path: Path) -> dict[str, tuple[float, int, str]]:
+    """Signature of memory files BEFORE an invocation (mtime + size + content hash)."""
     d = memory_dir(project_path)
-    out: dict[str, float] = {}
-    for name in (STATE_MD, NOTES_MD):
-        f = d / name
-        out[name] = f.stat().st_mtime if f.exists() else 0.0
-    return out
+    return {name: _sig(d / name) for name in (STATE_MD, NOTES_MD)}
 
 
-def verify_handoff(project_path: Path, before: dict[str, float]) -> bool:
-    """True if at least one memory file was modified since the snapshot."""
-    after = snapshot_mtimes(project_path)
-    return any(after[k] > before.get(k, 0.0) for k in after)
+def verify_handoff(project_path: Path, before: dict[str, tuple[float, int, str]]) -> bool:
+    """True if an agent made a REAL change to memory: a content hash or size
+    differs. A bare mtime touch (re-saving identical content) does NOT count -
+    the handoff must record actual work, not just touch the file."""
+    after = snapshot_memory(project_path)
+    for name, sig in after.items():
+        b = before.get(name, (0.0, -1, ""))
+        if sig[1] != b[1] or sig[2] != b[2]:   # size or content hash changed
+            return True
+    return False
 
 
 def read_state(project_path: Path) -> str:

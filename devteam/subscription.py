@@ -32,6 +32,8 @@ from . import config
 DEFAULT_DAILY_CALLS = {"claude": 15, "codex": 20, "gemini": 0}
 GUARDED_BRAINS = ("claude", "codex", "gemini")  # subscription-backed brains
 DEFAULT_COOLDOWN_S = 3600  # 1h pause when the provider reports a limit
+ERROR_COOLDOWN_S = 180     # short rest after a HARD error so the self-heal cascade
+                           # advances to the NEXT premium brain (not the same one)
 
 RATE_LIMIT_MARKERS = (
     "rate limit", "rate-limit", "usage limit", "limit reached", "quota",
@@ -108,6 +110,15 @@ def report_rate_limit(brain: str, cooldown_s: int = DEFAULT_COOLDOWN_S) -> None:
     b = _brain_state(state, brain)
     b["cooldown_until"] = (_now() + timedelta(seconds=cooldown_s)).isoformat()
     _save(state)
+
+
+def report_error(brain: str, cooldown_s: int = ERROR_COOLDOWN_S) -> None:
+    """A premium brain returned a HARD error/timeout (not a rate-limit). Rest it
+    BRIEFLY so the self-heal cascade re-routes to the next premium brain instead
+    of retrying the same failing one. Much shorter than a rate-limit cooldown."""
+    if brain not in GUARDED_BRAINS:
+        return
+    report_rate_limit(brain, cooldown_s)
 
 
 def clear_cooldown(brain: str) -> None:

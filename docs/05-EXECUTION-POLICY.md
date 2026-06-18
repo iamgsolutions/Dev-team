@@ -160,4 +160,5 @@ paid subscription is never benched. Manage manually with
 | Bench / unbench a model | `devteam scorecard --bench <model>` / `--unbench <model>` |
 | Raise/lower the budget cap | per project (`--cap`) or `config.DEFAULT_BUDGET_CAP_USD` |
 | Change premium budget thresholds | `config.PREMIUM_MIN_BUDGET_USD`, `config.AUDIT_PREMIUM_MIN_BUDGET_USD` |
+| Benchmark models on a task (e.g. jcode vs OpenCode) | `devteam bench [--brains …] [--task …]` |
 | See the live picture | `devteam panel` (projects, rations, scorecard, health) |

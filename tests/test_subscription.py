@@ -20,6 +20,15 @@ def test_rate_limit_cooldown_and_wake(isolated_dirs):
     assert subscription.available("codex")
 
 
+def test_report_error_rests_premium_briefly(isolated_dirs):
+    assert subscription.available("claude")
+    subscription.report_error("claude")            # hard error -> short cooldown
+    assert not subscription.available("claude")    # cascade will skip to codex
+    assert subscription.available("codex")
+    subscription.report_error("opencode")          # non-guarded -> no-op, no crash
+    assert subscription.available("opencode")
+
+
 def test_status_reports_both_brains(isolated_dirs):
     subscription.set_daily_budget("claude", 5)
     subscription.record_call("claude")

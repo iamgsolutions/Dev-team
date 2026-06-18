@@ -57,6 +57,16 @@ def test_audit_garbled_verdict_is_not_approval(tmp_path, monkeypatch):
     assert not rep.approved
 
 
+def test_parse_verdict_critical_overrides_approved():
+    # the engine ENFORCES critical => rejected, even if the model wrote APPROVED
+    assert audit._parse_verdict("VERDICT: APPROVED\nFINDINGS:\n- none") is True
+    assert audit._parse_verdict("VERDICT: APPROVED\nFINDINGS:\n- critical: SQL injection") is False
+    assert audit._parse_verdict("VERDICT: APPROVED\nFINDINGS:\n- [critical] auth bypass") is False
+    assert audit._parse_verdict("VERDICT: APPROVED\nFINDINGS:\n- crítico: confirmado") is False
+    assert audit._parse_verdict("VERDICT: APPROVED\nFINDINGS:\n- major: style only") is True
+    assert audit._parse_verdict("garbled") is False
+
+
 def test_empty_diff_auto_approves(tmp_path):
     repo = tmp_path / "clean"
     repo.mkdir()
@@ -75,6 +85,15 @@ def test_secrets_gate_catches_leaked_key(tmp_path):
     rep = run_gates(tmp_path)
     assert not rep.passed
     assert "secrets:FAIL" in rep.summary()
+
+
+def test_secrets_gate_scans_dockerfile(tmp_path):
+    # deploy phase generates Dockerfiles (no extension) - they must be scanned
+    (tmp_path / "Dockerfile").write_text(
+        "FROM python:3.11\nENV API_KEY=sk-or-v1-abcdefghij1234567890abcdefghij\n",
+        encoding="utf-8")
+    findings = scan_secrets(tmp_path)
+    assert findings and "Dockerfile" in findings[0]
 
 
 def test_secrets_gate_clean_project_passes(tmp_path):

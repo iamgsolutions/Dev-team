@@ -2,10 +2,23 @@
 
 Default rules (07-technical-decisions):
 - design roles (pm, architect)            -> claude (premium designs, few tokens)
-- execution roles (backend, frontend, qa) -> opencode free -> cheap escalation
-- audit/review                            -> a brain DIFFERENT from the author
+- execution roles (backend, frontend, qa) -> opencode FREE model
 - critical tasks                          -> escalate to claude regardless of role
-- budget nearly exhausted                 -> degrade to free models only
+- budget nearly exhausted                 -> degrade to the best CHEAP model
+
+IMPORTANT (so the policy is not over-promised):
+- The free->cheap step happens in two real ways, NOT via a free-quota signal:
+  (1) the budget-low branch forces the cheap tier; (2) when a free model FAILS,
+  `brains/opencode.invoke_with_fallback` walks `fallback_chain()` (free then
+  cheap). The `free_tier_exhausted` param exists but the executor never sets it
+  true, so there is no "free quota exhausted -> cheap" trigger by itself.
+- The AUDIT_ROLES branch below is LATENT: the live pipeline audits via
+  `audit.py::audit_worktree` (criticality-scaled panel), not through route().
+  route() only reaches the audit branch if called directly with a review/audit
+  role, which PHASE_TASKS never schedules. `audit.py` is authoritative.
+- jcode is registered as a brain but is NEVER returned here (off-route until the
+  roadmap-H benchmark); gemini is code-preferred for audits but disabled by a
+  ration of 0 by default.
 
 Every decision returns a justification string and is recorded by the caller
 into reflective memory (S14) to improve routing over time.
@@ -26,7 +39,7 @@ BRAIN_DEFER = "defer"  # premium needed but resting -> task waits for the next b
 
 @dataclass
 class Route:
-    brain: str                 # claude | codex | opencode | defer
+    brain: str                 # claude | codex | gemini | opencode | defer (never jcode)
     model: str | None          # explicit model for opencode; None = CLI default
     justification: str
 
@@ -48,6 +61,7 @@ def route(
 
     # Audit: must differ from author (diversity principle). Gemini is the
     # PREFERRED auditor: diverse, huge context, and saves the codex ration.
+    # NOTE: latent path - the live pipeline audits via audit.py, not route().
     if role in AUDIT_ROLES:
         candidates = []
         if gemini_available and author_brain != config.BRAIN_GEMINI:
@@ -55,7 +69,7 @@ def route(
         if codex_available and author_brain != config.BRAIN_CODEX:
             candidates.append((config.BRAIN_CODEX, "audit: codex (diverse)"))
         for brain, why in candidates:
-            if budget_remaining_usd > 1.0:
+            if budget_remaining_usd > config.AUDIT_PREMIUM_MIN_BUDGET_USD:
                 return Route(brain, None, f"{why}; author was {author_brain or 'unknown'}")
         return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted),
                      f"audit: cheap diverse model (premium resting or budget low; author {author_brain or 'unknown'})")
@@ -63,7 +77,7 @@ def route(
     # Critical / design work wants a premium brain. Escalation chain:
     # claude -> codex -> gemini -> DEFER (the daemon retries later).
     if critical or role in DESIGN_ROLES:
-        if budget_remaining_usd <= 2.0:
+        if budget_remaining_usd <= config.PREMIUM_MIN_BUDGET_USD:
             return Route(config.BRAIN_OPENCODE, _opencode_model(free_tier_exhausted=True),
                          f"{role}: premium-grade task but project budget nearly exhausted -> best cheap model")
         if claude_available:

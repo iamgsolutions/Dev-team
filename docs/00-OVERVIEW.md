@@ -55,8 +55,8 @@ and a final acceptance gate.
 
 | Area | Status | % |
 |---|---|---|
-| Engine core (state, budget, router, executor, memory, gates, audit, scorecard, daemon, listener, doctor, catalog, eventlog, presets) | Built, ~130 tests green | **~85%** |
-| Brains connected (Claude/Codex/OpenCode/Gemini) | 4/4 wired (Gemini disabled by choice) | **100%** |
+| Engine core (state, budget, router, executor, memory, gates, audit, scorecard, daemon, listener, doctor, catalog, eventlog, presets) | Built, ~140 tests green | **~85%** |
+| Brains connected (Claude/Codex/OpenCode/Gemini + jcode optional) | 4 default wired + jcode (off-route, to benchmark); Gemini disabled by choice | **100%** |
 | Memory & learning loop (per-project + reflective + lessons + catalog) | Built | **~80%** |
 | Pipeline end-to-end on a REAL project | Validated in pieces + 1 trivial task; **no full project delivered yet** | **~10%** |
 | Autonomous deploy | Artifacts generated; real deploy blocked by current infra | **~30%** |
@@ -72,8 +72,9 @@ A **Development Operating System**: a partner describes what they want, and the
 system delivers production software — designed, built, tested, audited, deployed,
 documented — at the quality and consistency a customer pays for, running
 continuously, getting better with every project (reusable component catalog +
-reflective learning). MG Solutions builds it internally first (fail on our own
-projects, learn), then sells it.
+reflective learning). The orchestrator is an **internal tool for MG + IDA** — it
+is not sold to clients. What we sell is the **software the team builds**, not the
+system itself (see `04-COLLABORATION.md` and `03-ROADMAP.md`).
 
 ## Read next
 - `01-ARCHITECTURE.md` — how it's programmed, module by module, with diagrams.

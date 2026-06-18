@@ -12,7 +12,10 @@ from __future__ import annotations
 from pathlib import Path
 
 SKILLS_DIR = Path(__file__).parent / "skills"
-MAX_PACK_CHARS = 9000   # keep instructions lean; files are written compact
+# Cap on the composed knowledge pack. Roles now carry 6-7 skills, so 9000 was
+# truncating load-bearing craft; 12000 keeps packs lean while letting the full
+# role craft through for current models.
+MAX_PACK_CHARS = 12000
 
 # role -> ordered skill files (first = most important, kept under truncation)
 # audit fixes: qa now gets `testing`; frontend gets `security` (XSS/CSRF/auth);
@@ -20,12 +23,12 @@ MAX_PACK_CHARS = 9000   # keep instructions lean; files are written compact
 ROLE_SKILLS: dict[str, list[str]] = {
     "pm": ["pm", "product-quality", "data-privacy"],
     "architect": ["architect", "security", "api-design", "database", "performance"],
-    "backend": ["backend", "python", "testing", "security", "database", "observability"],
-    "frontend": ["frontend", "typescript", "testing", "security", "accessibility", "performance"],
+    "backend": ["backend", "python", "testing", "security", "database", "observability", "git-workflow"],
+    "frontend": ["frontend", "typescript", "testing", "security", "accessibility", "performance", "git-workflow"],
     "qa": ["qa", "testing", "debugging", "api-design"],
     "review": ["review", "security", "code-style"],
     "audit": ["review", "security", "code-style"],
-    "deploy": ["devops", "observability", "security"],
+    "deploy": ["devops", "observability", "security", "git-workflow"],
 }
 
 # Second dimension: per project TYPE, extra skills layered on the role pack so

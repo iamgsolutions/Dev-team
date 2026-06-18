@@ -101,8 +101,11 @@ the tools its role needs.
 4. Tests.
 
 **Worked example:** `devteam/brains/jcode.py` is a complete, tested brain added
-this way (multi-provider Rust harness). See `docs/jcode.md` for the rationale and
-the benchmark-before-promoting plan.
+this way (multi-provider Rust harness) — with one deliberate exception: it does
+step 1, 2 and 4 but **not step 3**. jcode is intentionally left *off-route* (the
+router never selects it) until the roadmap-H benchmark; reach it only via its
+presets. See `docs/jcode.md`. Routing for a normal new brain still belongs in
+`router.py`.
 
 ## 6. Golden rules for contributors
 - The engine is deterministic on purpose. Put intelligence in prompts/skills,

@@ -29,7 +29,7 @@ def _jcode_exe() -> str:
     override = os.environ.get("DEVTEAM_JCODE")
     if override and Path(override).exists():
         return override
-    cand = Path(os.environ.get("USERPROFILE", r"C:\Users\Administrator")) / "dev" / "tools" / "jcode.exe"
+    cand = Path.home() / "dev" / "tools" / "jcode.exe"
     if cand.exists():
         return str(cand)
     return config.resolve_cli("jcode")

@@ -25,6 +25,8 @@ VERDICT: APPROVED | REJECTED
 FINDINGS:
 - [critical|major|minor] file:line — what and why
 ```
-- REJECTED if: ≥1 critical (security/correctness) or ≥3 majors.
+- REJECTED if there is ANY critical (security/correctness) — **the engine
+  enforces this** (a listed critical overrides an APPROVED verdict). On ≥3 majors,
+  write REJECTED and say why.
 - Minors are listed, they do NOT block (debt, not defect).
 - Be specific: "the code in general…" is not a finding.

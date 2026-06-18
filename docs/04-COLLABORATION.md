@@ -60,7 +60,8 @@ MG will drive **B** (smart task-graph decomposition) and **F** (the Solution
 Architect Agent / productization) in parallel.
 
 ## Onboarding path for an IDA developer
-1. Read `docs/00-OVERVIEW.md` → `01-ARCHITECTURE.md` → `02-EXTENDING.md`.
-2. Set up the dev env, run the tests.
+1. Do `docs/QUICKSTART.md` (clone → first running phase in ~10 min).
+2. Read `docs/00-OVERVIEW.md` → `05-EXECUTION-POLICY.md` (how it decides what
+   runs) → `01-ARCHITECTURE.md`, with `06-GLOSSARY.md` open as a reference.
 3. Read `devteam/executor.py` (the spine) and `devteam/pipeline.py` (the flow).
-4. Pick a roadmap item; propose a design PR before building.
+4. Read `02-EXTENDING.md`; pick a roadmap item; propose a design PR before building.

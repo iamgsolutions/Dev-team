@@ -12,14 +12,15 @@ from pathlib import Path
 # --- Paths -----------------------------------------------------------------
 
 ENGINE_ROOT = Path(__file__).resolve().parent.parent
+_HOME = Path.home()   # no hardcoded operator paths: derive defaults from the profile
 DATA_DIR = Path(os.environ.get("DEVTEAM_DATA", ENGINE_ROOT / "data"))
-PROJECTS_ROOT = Path(os.environ.get("DEVTEAM_PROJECTS", r"C:\Users\Administrator\dev\projects"))
+PROJECTS_ROOT = Path(os.environ.get("DEVTEAM_PROJECTS") or (_HOME / "dev" / "projects"))
 
+# Hermes CLI (the operator's gateway). Override with DEVTEAM_HERMES_EXE; the
+# default assumes the standard Windows install under the user profile.
 HERMES_EXE = Path(
-    os.environ.get(
-        "DEVTEAM_HERMES_EXE",
-        r"C:\Users\Administrator\AppData\Local\hermes\hermes-agent\venv\Scripts\hermes.exe",
-    )
+    os.environ.get("DEVTEAM_HERMES_EXE")
+    or (_HOME / "AppData" / "Local" / "hermes" / "hermes-agent" / "venv" / "Scripts" / "hermes.exe")
 )
 
 PROJECT_MEMORY_DIR = ".project-memory"  # inside each project repo
@@ -27,7 +28,7 @@ PROJECT_MEMORY_DIR = ".project-memory"  # inside each project repo
 # Known location of npm-installed CLIs (claude/codex/opencode live here as
 # .cmd wrappers). subprocess on Windows does not apply PATHEXT, and service
 # processes may have a minimal PATH - so we resolve executables explicitly.
-NPM_BIN = Path(os.environ.get("APPDATA", r"C:\Users\Administrator\AppData\Roaming")) / "npm"
+NPM_BIN = Path(os.environ.get("APPDATA") or (_HOME / "AppData" / "Roaming")) / "npm"
 
 
 def resolve_cli(name: str) -> str:
@@ -52,6 +53,11 @@ def resolve_cli(name: str) -> str:
 DEFAULT_BUDGET_CAP_USD = 30.0   # mid of the 20-50 range chosen by the human
 BUDGET_ALERT_RATIO = 0.80       # alert at 80%
 MAX_TASK_RETRIES = 3            # per-task retry budget before escalating
+
+# Routing budget thresholds (USD remaining). Below these, the router degrades a
+# premium-grade task to the best cheap model instead of spending premium.
+PREMIUM_MIN_BUDGET_USD = 2.0    # design/critical tasks need at least this to use premium
+AUDIT_PREMIUM_MIN_BUDGET_USD = 1.0   # premium auditor only above this
 
 # --- Brains and models (spec ADR-012/013, 07-technical-decisions) -----------
 

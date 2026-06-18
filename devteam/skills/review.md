@@ -29,6 +29,9 @@ VERDICT: APPROVED | REJECTED
 FINDINGS:
 - [critical|major|minor] file:line — what and why it matters
 ```
-- REJECTED if there is ≥1 critical or ≥3 major. Minor is listed, doesn't block.
+- REJECTED if there is ANY critical finding — **the engine enforces this**: a
+  listed `critical` overrides an APPROVED verdict, so never write APPROVED with a
+  critical in the list. Majors/minors are recorded but don't auto-block; if you
+  see ≥3 majors, write REJECTED and say why.
 - A finding without a concrete location doesn't count. No "the code in general...".
 - If it's fine: APPROVED with the 1-2 residual risks you see (there always are some).

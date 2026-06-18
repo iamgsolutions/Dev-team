@@ -1,11 +1,15 @@
-"""4-block instruction builder (S4a) - enforces ADR-015 memory handoff protocol.
+"""5-block instruction builder (S4a) - enforces ADR-015 memory handoff protocol.
 
-Every instruction sent to ANY brain MUST contain the four blocks:
-ORIENTATION (what to read first), TASK (what to do + acceptance criteria),
-CONSTRAINTS (model/budget/forbidden/gates), CLOSE-OUT (which memory to update).
+Every instruction sent to ANY brain has 5 blocks: 4 MANDATORY +
+1 optional ROLE KNOWLEDGE:
+  ORIENTATION   (what to read first)                      [mandatory]
+  TASK          (what to do + acceptance criteria)        [mandatory]
+  CONSTRAINTS   (model/budget/forbidden/gates)            [mandatory]
+  ROLE KNOWLEDGE(the role's injected skill pack)          [optional]
+  CLOSE-OUT     (which memory to update before finishing) [mandatory]
 
-build() raises MalformedInstruction if any block is missing/empty - making it
-*impossible* for the engine to emit a malformed instruction.
+build() raises MalformedInstruction if any MANDATORY block is missing/empty -
+making it *impossible* for the engine to emit a malformed instruction.
 """
 from __future__ import annotations
 

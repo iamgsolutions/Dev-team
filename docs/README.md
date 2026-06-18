@@ -1,18 +1,27 @@
 # DEV-TEAM documentation
 
-An autonomous multi-agent software development organization, built by MG Solutions.
+An autonomous multi-agent software development organization, built by MG Solutions
+as an internal tool for MG + IDA.
 
-Read in order:
+**Start here:** **[QUICKSTART.md](QUICKSTART.md)** — clone to first running phase in
+~10 minutes.
+
+Then read in order:
 
 1. **[00-OVERVIEW.md](00-OVERVIEW.md)** — what it is, the thesis, the loop, how
    advanced it is (honest %), and the end goal.
-2. **[01-ARCHITECTURE.md](01-ARCHITECTURE.md)** — how it's programmed, module by
+2. **[05-EXECUTION-POLICY.md](05-EXECUTION-POLICY.md)** — **exactly which brain and
+   model runs for each task at each moment**, rations, cost, failure handling. The
+   single source of truth for how the system works.
+3. **[01-ARCHITECTURE.md](01-ARCHITECTURE.md)** — how it's programmed, module by
    module, with diagrams and the exact path of one task.
-3. **[02-EXTENDING.md](02-EXTENDING.md)** — how to add skills, roles, agent
+4. **[06-GLOSSARY.md](06-GLOSSARY.md)** — vocabulary + a concept → file → test map
+   to navigate the code cold.
+5. **[02-EXTENDING.md](02-EXTENDING.md)** — how to add skills, roles, agent
    presets, MCPs and brains.
-4. **[03-ROADMAP.md](03-ROADMAP.md)** — the complex features to build (the
+6. **[03-ROADMAP.md](03-ROADMAP.md)** — the complex features to build (the
    "monster" plan), with complexity/value and ownership.
-5. **[04-COLLABORATION.md](04-COLLABORATION.md)** — how we work together (repos,
+7. **[04-COLLABORATION.md](04-COLLABORATION.md)** — how we work together (repos,
    English-only, workflow, onboarding).
 
 Reference notes:

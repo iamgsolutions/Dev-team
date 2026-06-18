@@ -17,7 +17,7 @@ from .state import Project, registry_add
 # Universal team rules, written into every project repo. The three coding
 # CLIs (claude/codex/opencode) auto-read AGENTS.md from the working directory,
 # so these rules apply on every invocation - belt AND suspenders with the
-# engine's 4-block instructions. These rules are self-contained below.
+# engine's 5-block instructions. These rules are self-contained below.
 AGENTS_MD = """\
 # AGENTS.md - Team rules (mandatory for EVERY agent in this repo)
 
@@ -125,7 +125,7 @@ def new_project(
 
     # AGENTS.md: claude/codex/opencode read this automatically from the cwd -
     # it reinforces the universal team rules on EVERY invocation, in addition
-    # to the 4-block instruction the engine injects.
+    # to the 5-block instruction the engine injects.
     (project_path / "AGENTS.md").write_text(AGENTS_MD, encoding="utf-8")
 
     # STANDARDS.md: the team's single way of building (structure, code rules,

@@ -16,6 +16,16 @@
    2-line justification, folder structure (the one from STANDARDS),
    ADR-style decisions (what, why, the discarded alternative).
 
+### Reuse before building (the team CATALOG / SAA)
+Before designing anything from scratch, check the reusable-component catalog the
+engine injects into your context (auth, payments, dashboards, web-push, etc.):
+- If a component fits, **REUSE it**: list it in `docs/architecture.md` under a
+  "Reused components" heading and design only the gap around it.
+- Adapt > rebuild > invent. Build new only what the catalog does not cover.
+- When you produce something genuinely reusable, note it in NOTES.md so the
+  director can add it to the catalog for the next project.
+This is how the team gets faster every project instead of rewriting the same auth.
+
 ### Decision principles
 - **Boring wins**: proven technology from the standard > novelty. Every
   exotic piece is a piece another model won't know how to maintain.

@@ -1,4 +1,4 @@
-"""Quality gates (S8) - hard gate before any merge (spec R5: calidad estricta).
+"""Quality gates (S8) - hard gate before any merge (spec R5: strict quality).
 
 v1 design: each project can define its gate commands in
 .project-memory/gates.json (written by the Architect phase):
@@ -83,7 +83,10 @@ SECRET_PATTERNS = [
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
 ]
 SECRET_SCAN_EXTS = {".py", ".js", ".ts", ".tsx", ".jsx", ".json", ".yaml", ".yml",
-                    ".toml", ".md", ".env.example", ".cfg", ".ini", ".sql", ".sh", ".ps1"}
+                    ".toml", ".md", ".env.example", ".cfg", ".ini", ".sql", ".sh", ".ps1",
+                    ".txt", ".conf", ".tf", ".properties"}
+# Extension-less files worth scanning (e.g. the deploy phase generates Dockerfiles).
+SECRET_SCAN_NAMES = {"Dockerfile", "dockerfile", "Makefile", "Procfile"}
 
 
 def scan_secrets(workdir: Path, max_files: int = 2000) -> list[str]:
@@ -98,7 +101,9 @@ def scan_secrets(workdir: Path, max_files: int = 2000) -> list[str]:
         parts = {p.lower() for p in f.parts}
         if {".git", ".venv", "node_modules", "__pycache__"} & parts:
             continue
-        if not f.is_file() or f.name == ".env" or f.suffix.lower() not in SECRET_SCAN_EXTS:
+        if not f.is_file() or f.name == ".env":
+            continue
+        if f.suffix.lower() not in SECRET_SCAN_EXTS and f.name not in SECRET_SCAN_NAMES:
             continue
         count += 1
         try:
@@ -120,11 +125,11 @@ def run_gates(workdir: Path, timeout_s: int = 900) -> GateReport:
 
     checks: list[GateCheck] = []
 
-    # Built-in security gate: ALWAYS runs (spec: hardening basico siempre).
+    # Built-in security gate: ALWAYS runs (spec: basic hardening always).
     leaks = scan_secrets(workdir)
     checks.append(GateCheck(
         "secrets", passed=not leaks,
-        output=("clean" if not leaks else "posibles secretos en: " + ", ".join(leaks)),
+        output=("clean" if not leaks else "possible secrets in: " + ", ".join(leaks)),
     ))
     for spec in specs:
         name, cmd = spec.get("name", "gate"), spec.get("cmd", [])

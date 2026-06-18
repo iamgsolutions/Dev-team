@@ -2,7 +2,7 @@
 
 execute_task() is the ONLY path through which a brain touches a project:
   1. route the task to a brain/model (budget-aware)
-  2. build the 4-block instruction (raises if malformed)
+  2. build the 5-block instruction (4 mandatory + optional ROLE KNOWLEDGE; raises if malformed)
   3. create an isolated worktree for the task branch
   4. snapshot memory mtimes, invoke the brain
   5. verify the memory handoff (retry with explicit warning if violated)

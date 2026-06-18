@@ -37,7 +37,9 @@ only your reasoning costs tokens). The loop:
   (`@` is splatting). On bash `@e2` is fine.
 
 ### The report (docs/qa-report.md) — mandatory format
-- Summary: PASS / FAIL + 2 lines of why.
+- Summary: PASS / FAIL + 2 lines of why. (This verdict is for the human/director;
+  the engine gates on the test SUITE + gates, not on this token — so a FAIL here
+  is your loud signal to the team, not an automatic pipeline block.)
 - Per-endpoint table: case tested → expected → obtained → ✓/✗.
 - Defects: numbered, with SEVERITY (critical=data loss/security;
   major=broken M functionality; minor=cosmetic), EXACT reproduction

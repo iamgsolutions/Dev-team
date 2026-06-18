@@ -8,6 +8,7 @@ checks are passive/cheap: no LLM calls.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -69,9 +70,10 @@ def run_doctor() -> list[Check]:
     for name, f in cred_files.items():
         checks.append(Check(name, f.exists(), str(f) if f.exists() else f"missing {f.name}"))
 
-    # 3. Git remote reachability over SSH (cheap: ls-remote HEAD only)
-    rc, out = _run(["git", "ls-remote", "--heads",
-                    "git@github.com:iamgsolutions/Dev-team.git", "main"], timeout=25)
+    # 3. Git remote reachability over SSH (cheap: ls-remote HEAD only).
+    # Override with DEVTEAM_REPO so a fork checks its own remote, not MG's.
+    repo_url = os.environ.get("DEVTEAM_REPO", "git@github.com:iamgsolutions/Dev-team.git")
+    rc, out = _run(["git", "ls-remote", "--heads", repo_url, "main"], timeout=25)
     checks.append(Check("github:ssh", rc == 0, out[:120]))
 
     # 4. Hermes gateway alive + hermes send available

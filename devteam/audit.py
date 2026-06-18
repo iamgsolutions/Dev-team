@@ -13,6 +13,7 @@ they do not get a worktree and are exempt from the memory-handoff protocol.
 """
 from __future__ import annotations
 
+import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,6 +29,11 @@ VERDICT_REJECTED = "REJECTED"
 # model answers in either language (the skills are English; some models reply ES).
 _APPROVED_TOKENS = ("APPROVED", "APROBADO")
 _REJECTED_TOKENS = ("REJECTED", "RECHAZADO")
+# A findings line marked critical (EN or ES), e.g. "- critical: ..." / "- [crítico] ...".
+# The engine ENFORCES critical => rejected, instead of trusting the verdict token
+# alone (a model that lists a critical bug but writes APPROVED is still rejected).
+_CRITICAL_FINDING_RE = re.compile(r"^\s*[-*]\s*\[?\s*(critical|cr[ií]tico)\b",
+                                  re.IGNORECASE | re.MULTILINE)
 
 
 @dataclass
@@ -70,10 +76,15 @@ def _audit_prompt(diff: str, context: str) -> str:
 
 
 def _parse_verdict(text: str) -> bool:
-    up = (text or "").upper()
-    if any(t in up for t in _REJECTED_TOKENS):
+    t = text or ""
+    up = t.upper()
+    if any(tok in up for tok in _REJECTED_TOKENS):
         return False
-    return any(t in up for t in _APPROVED_TOKENS)  # missing/garbled = NOT approved
+    # Safety net: a stated APPROVED is overridden if the auditor listed a CRITICAL
+    # finding (skills + audit prompt say critical => reject; enforce it here).
+    if _CRITICAL_FINDING_RE.search(t):
+        return False
+    return any(tok in up for tok in _APPROVED_TOKENS)  # missing/garbled = NOT approved
 
 
 def audit_worktree(

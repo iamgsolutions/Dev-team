@@ -40,6 +40,19 @@ def test_unknown_role_gets_empty_pack():
     assert skillpack.load_for_role("astronaut") == ""
 
 
+def test_every_mapped_skill_resolves_to_a_file():
+    # load_for_role silently skips missing files; this catches a typo'd mapping
+    # before it ships a role with a silently-dropped skill.
+    names: set[str] = set()
+    for skills in skillpack.ROLE_SKILLS.values():
+        names.update(skills)
+    for role_map in skillpack.PROJECT_TYPE_SKILLS.values():
+        for skills in role_map.values():
+            names.update(skills)
+    missing = sorted(n for n in names if not (skillpack.SKILLS_DIR / f"{n}.md").exists())
+    assert not missing, f"skills mapped in skillpack but missing files: {missing}"
+
+
 def test_project_type_adds_extra_skills():
     base = skillpack.load_for_role("frontend")
     web = skillpack.load_for_role("frontend", "web")

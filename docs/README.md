@@ -30,6 +30,8 @@ For contributors:
   roadmap, sorted by difficulty.
 
 Reference notes:
+- **[ROLE-HARNESS.md](ROLE-HARNESS.md)** — what each role (pm/architect/backend/
+  frontend/qa/review/deploy) gets: its skills, tools/MCPs, brain tier and norms.
 - **[jcode.md](jcode.md)** — evaluation of the jcode brain (why it's integrated,
   risks, how it's wired, and the benchmark plan before promoting it).
 

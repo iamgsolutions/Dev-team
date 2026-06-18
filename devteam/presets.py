@@ -45,17 +45,17 @@ BUILTIN: dict[str, AgentPreset] = {
                                     mcps=["github", "filesystem", "fetch"],
                                     notes="Primary architect: best design reasoning."),
     "architect-codex": AgentPreset("architect-codex", "architect", config.BRAIN_CODEX,
-                                   mcps=["github", "filesystem"],
+                                   mcps=["github", "filesystem", "fetch"],
                                    notes="Alternate architect / second opinion."),
 
     # --- Programmers (execution, cheap/free) ---
     "backend-free": AgentPreset("backend-free", "backend", config.BRAIN_OPENCODE,
                                 model=config.OPENCODE_FREE_MODELS[0],
-                                mcps=["filesystem", "postgres"],
+                                mcps=["filesystem", "postgres", "github"],
                                 notes="Default backend worker, free tier."),
     "backend-deepseek": AgentPreset("backend-deepseek", "backend", config.BRAIN_OPENCODE,
                                     model=config.OPENCODE_CHEAP_MODELS[0],
-                                    mcps=["filesystem", "postgres"],
+                                    mcps=["filesystem", "postgres", "github"],
                                     notes="Backend worker, cheap-strong tier."),
     "frontend-free": AgentPreset("frontend-free", "frontend", config.BRAIN_OPENCODE,
                                  model=config.OPENCODE_FREE_MODELS[0],
@@ -65,7 +65,7 @@ BUILTIN: dict[str, AgentPreset] = {
     # for high-parallelism batches (roadmap A) - benchmark vs opencode (roadmap H)
     # before promoting. Pin a free OpenRouter model via `model=` for cost safety.
     "backend-jcode": AgentPreset("backend-jcode", "backend", config.BRAIN_JCODE,
-                                 mcps=["filesystem", "postgres"],
+                                 mcps=["filesystem", "postgres", "github"],
                                  notes="Experimental: jcode workhorse (low-RAM, fast). Pin a free model before use."),
 
     # --- Auditors (review, diverse brain) ---
@@ -86,13 +86,13 @@ BUILTIN: dict[str, AgentPreset] = {
     # --- QA / Tester ---
     "qa-free": AgentPreset("qa-free", "qa", config.BRAIN_OPENCODE,
                            model=config.OPENCODE_FREE_MODELS[0],
-                           mcps=["filesystem", "agent-browser", "playwright"],
+                           mcps=["filesystem", "agent-browser", "fetch", "playwright"],
                            notes="Functional tester (API + E2E web). agent-browser = agent-driven E2E (snapshot->click->assert)."),
 
     # --- DevOps ---
     "deploy-free": AgentPreset("deploy-free", "deploy", config.BRAIN_OPENCODE,
                                model=config.OPENCODE_FREE_MODELS[0],
-                               mcps=["filesystem", "docker"],
+                               mcps=["filesystem", "docker", "github"],
                                notes="Generates deploy artifacts (Dockerfile/compose/runbook)."),
 }
 

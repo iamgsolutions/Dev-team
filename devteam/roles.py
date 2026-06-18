@@ -25,6 +25,20 @@ class PhaseTask:
     forbidden: list[str] | None = None
 
 
+# Universal norms every role carries; each role ADDS its own lane on top. Kept in
+# roles.py (not hidden in the executor default) so the per-role harness is explicit.
+UNIVERSAL_FORBIDDEN = [
+    "touching the system configuration, other projects, or the engine itself",
+    "writing secrets/keys/tokens into code, commits or logs (use env vars)",
+    "going outside the scope of THIS task",
+]
+
+
+def _forbidden(*role_specific: str) -> list[str]:
+    """Compose a role's forbidden list: the universal norms + this role's lane."""
+    return [*UNIVERSAL_FORBIDDEN, *role_specific]
+
+
 def pm_task(project: Project) -> PhaseTask:
     return PhaseTask(
         role="pm",
@@ -43,6 +57,10 @@ def pm_task(project: Project) -> PhaseTask:
         ],
         expected_output="./docs/PRD.md",
         critical=True,  # design quality drives everything downstream
+        forbidden=_forbidden(
+            "inventing requirements not in the brief (put doubts in 'Questions for the human')",
+            "choosing the tech stack or writing code (that is the Architect's job)",
+        ),
     )
 
 
@@ -78,6 +96,10 @@ def architect_task(project: Project) -> PhaseTask:
         ],
         expected_output="./docs/architecture.md + api-contract.md + data-model.md",
         critical=True,
+        forbidden=_forbidden(
+            "writing implementation code (you design CONTRACTS, not code)",
+            "deviating from docs/STANDARDS.md (it overrides your taste)",
+        ),
     )
 
 
@@ -100,6 +122,10 @@ def backend_task(project: Project) -> PhaseTask:
         ],
         expected_output="backend code + tests, per the architecture.md structure",
         gates=["lint", "tests"],
+        forbidden=_forbidden(
+            "changing the API contract — if it's wrong, note it in NOTES.md and implement as contracted",
+            "implementing the frontend (stay in the backend)",
+        ),
     )
 
 
@@ -120,6 +146,10 @@ def frontend_task(project: Project) -> PhaseTask:
         ],
         expected_output="frontend application per architecture.md",
         gates=["lint", "build"],
+        forbidden=_forbidden(
+            "changing the API contract — consume it EXACTLY as written",
+            "modifying backend code (stay in the frontend)",
+        ),
     )
 
 
@@ -141,7 +171,7 @@ def qa_task(project: Project) -> PhaseTask:
             "final verdict: PASS or FAIL with reasons",
         ],
         expected_output="./docs/qa-report.md",
-        forbidden=["modifying application code (you only report)"],
+        forbidden=_forbidden("modifying application code (you only test and report)"),
     )
 
 
@@ -160,7 +190,7 @@ def review_task(project: Project, author_brain: str | None = None) -> PhaseTask:
             "justified verdict",
         ],
         expected_output="./docs/review-report.md",
-        forbidden=["modifying code (you only audit)"],
+        forbidden=_forbidden("modifying code (you only audit and report)"),
     )
 
 
@@ -186,6 +216,10 @@ def deploy_task(project: Project) -> PhaseTask:
         ],
         expected_output="Dockerfile + docker-compose.yml + .env.example + docs/DEPLOY_RUNBOOK.md",
         gates=["build"],
+        forbidden=_forbidden(
+            "running the actual deployment (you produce + validate artifacts; the operator deploys)",
+            "hardcoding secrets into the Dockerfile/compose (use .env.example)",
+        ),
     )
 
 

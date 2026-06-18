@@ -71,9 +71,19 @@ them once per machine in each brain CLI; presets reference them by name.
 | `filesystem` | scoped file read/write in the worktree | all |
 | `github` | repos, branches, PRs, issues | architect, deploy, review |
 | `postgres` | inspect schema, run queries against the project DB | backend, qa |
-| `playwright` | drive a real browser for E2E | qa, frontend |
+| `agent-browser` | **agent-driven E2E** — `snapshot` (a11y tree + refs) → `click`/`type` → assert; Core Web Vitals; request mocking | qa, frontend |
+| `playwright` | scripted browser E2E (when you want deterministic scripts) | qa, frontend |
 | `docker` | build/run containers, compose | deploy |
 | `fetch` / `web` | read docs/specs/URLs the brief points to | pm, architect |
+
+> **agent-browser vs playwright:** `agent-browser` (Vercel Labs, Apache-2.0) is a
+> Rust CLI built for AI agents — the agent gets an accessibility-tree snapshot
+> with element refs and clicks/types by ref, instead of writing brittle CSS
+> selectors. It's the preferred driver for the QA agent's "see and touch it like
+> a user" loop (the browser control costs no tokens; only the agent's reasoning
+> does). Install: `npm i -g agent-browser && agent-browser install`. See the QA
+> skill (`skills/qa.md`) for the loop. Playwright stays available for scripted,
+> fully-deterministic suites.
 
 Project-specific MCPs (Stripe, a vendor API, etc.) are added per project on top
 of this base. Keep the set small and least-privilege: an agent should only get

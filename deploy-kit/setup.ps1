@@ -18,9 +18,13 @@ if (-not (Have gh))   { winget install --id GitHub.cli -e --accept-source-agreem
 if (-not (Have uv))   { winget install --id astral-sh.uv -e --accept-source-agreements --accept-package-agreements }
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
-Step "2/5 Brain CLIs (npm global)"
+Step "2/5 Brain CLIs + tools (npm global)"
 # OpenCode is the free workhorse; Claude/Codex/Gemini are subscription-backed.
 npm install -g @anthropic-ai/claude-code @openai/codex opencode-ai @google/gemini-cli
+# agent-browser: agent-driven E2E browser control for the QA/frontend agents.
+npm install -g agent-browser
+# Download Chrome for Testing for agent-browser (non-fatal if offline).
+try { agent-browser install } catch { Write-Host "agent-browser Chrome download skipped: $_" -ForegroundColor Yellow }
 
 Step "3/5 Engine repo"
 New-Item -ItemType Directory -Force $DevRoot, "$DevRoot\projects", "$DevRoot\briefs" | Out-Null

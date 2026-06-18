@@ -54,6 +54,11 @@ def run_doctor() -> list[Check]:
     except Exception as e:  # noqa: BLE001
         checks.append(Check("cli:jcode (optional)", True, f"n/a: {type(e).__name__}"))
 
+    # 1c. agent-browser (optional E2E tool for qa/frontend) - never fails doctor
+    ab = shutil.which("agent-browser") or shutil.which(config.resolve_cli("agent-browser"))
+    checks.append(Check("cli:agent-browser (optional)", True,
+                        ab if ab else "not installed (E2E browser tool; npm i -g agent-browser)"))
+
     # 2. Cached credentials present (passive - no API calls)
     cred_files = {
         "auth:claude": home / ".claude" / ".credentials.json",

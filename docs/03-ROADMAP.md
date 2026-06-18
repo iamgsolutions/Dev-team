@@ -42,8 +42,12 @@ sizing per brain (small/literal for free models, complex for premium).
 The QA role runs as an agent today; make it a deterministic harness it can drive:
 - API tester: spin up the app, hit every contract endpoint (happy + error),
   assert against the contract automatically.
-- E2E web: a Playwright harness the agent scripts and runs, with screenshots
-  and a structured report.
+- E2E web: **agent-browser** (Vercel Labs, Apache-2.0) is the chosen agent-driven
+  driver — the agent gets an accessibility snapshot with refs and clicks/types
+  by ref (more robust + LLM-friendly than scripted CSS selectors), plus Core Web
+  Vitals and request mocking for error states. Validated on the VPS (2026-06-18);
+  wired into the qa/frontend presets and the QA skill. Playwright remains for
+  fully-scripted suites.
 - Mobile E2E (React Native / Expo): Detox/Maestro — hard, later.
 - Lead: **IDA** (test infrastructure is their strength).
 

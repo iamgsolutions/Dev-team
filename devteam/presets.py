@@ -59,8 +59,8 @@ BUILTIN: dict[str, AgentPreset] = {
                                     notes="Backend worker, cheap-strong tier."),
     "frontend-free": AgentPreset("frontend-free", "frontend", config.BRAIN_OPENCODE,
                                  model=config.OPENCODE_FREE_MODELS[0],
-                                 mcps=["filesystem"],
-                                 notes="Default frontend worker, free tier."),
+                                 mcps=["filesystem", "agent-browser"],
+                                 notes="Default frontend worker, free tier. Can self-verify the UI with agent-browser."),
     # jcode-based worker: fast/low-RAM Rust harness, multi-provider. Candidate
     # for high-parallelism batches (roadmap A) - benchmark vs opencode (roadmap H)
     # before promoting. Pin a free OpenRouter model via `model=` for cost safety.
@@ -86,8 +86,8 @@ BUILTIN: dict[str, AgentPreset] = {
     # --- QA / Tester ---
     "qa-free": AgentPreset("qa-free", "qa", config.BRAIN_OPENCODE,
                            model=config.OPENCODE_FREE_MODELS[0],
-                           mcps=["filesystem", "playwright"],
-                           notes="Functional tester (API + E2E web)."),
+                           mcps=["filesystem", "agent-browser", "playwright"],
+                           notes="Functional tester (API + E2E web). agent-browser = agent-driven E2E (snapshot->click->assert)."),
 
     # --- DevOps ---
     "deploy-free": AgentPreset("deploy-free", "deploy", config.BRAIN_OPENCODE,

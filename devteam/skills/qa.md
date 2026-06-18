@@ -17,6 +17,25 @@
    numbers, out-of-range pagination, deleting something twice.
 5. **Persistence**: create→restart app→is it still there?
 
+### Driving the real frontend — agent-browser (see and touch it like a user)
+For UI flows do NOT infer from the code: drive a real headless browser with the
+`agent-browser` CLI (JSON output, no token cost for the browser control itself —
+only your reasoning costs tokens). The loop:
+1. `agent-browser open <url>` — load the page.
+2. `agent-browser snapshot --json` — accessibility tree + element refs
+   (e.g. `e2`). This is what you "see"; reason over it. (`data.origin` = current URL.)
+3. Act by ref (deterministic, not brittle CSS): `agent-browser click <ref>`,
+   `type <ref> <text>`, `fill <ref> <text>`, `select <ref> <val>`,
+   `press <key>`, `hover <ref>`, `wait <sel|ms>`.
+4. ASSERT: re-`snapshot` (did the URL/state change?) or `screenshot <file.png>`
+   as evidence. Verify all three states per flow: loading, error, success.
+- Force the ERROR state by mocking the API: `agent-browser route <url> --abort`
+  or `route <url> --body <json>`. A flow that has no error handling is a defect.
+- Performance is a defect too: `agent-browser vitals --json` (LCP/CLS/INP/TTFB/FCP).
+- Always `agent-browser close` when done.
+- GOTCHA: on **PowerShell** quote ref selectors — `click '@e2'`, NOT `click @e2`
+  (`@` is splatting). On bash `@e2` is fine.
+
 ### The report (docs/qa-report.md) — mandatory format
 - Summary: PASS / FAIL + 2 lines of why.
 - Per-endpoint table: case tested → expected → obtained → ✓/✗.

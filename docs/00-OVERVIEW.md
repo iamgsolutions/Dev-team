@@ -58,7 +58,7 @@ and a final acceptance gate.
 | Engine core (state, budget, router, executor, memory, gates, audit, scorecard, daemon, listener, doctor, catalog, eventlog, presets) | Built, ~140 tests green | **~85%** |
 | Brains connected (Claude/Codex/OpenCode/Gemini + jcode optional) | 4 default wired + jcode (off-route, to benchmark); Gemini disabled by choice | **100%** |
 | Memory & learning loop (per-project + reflective + lessons + catalog) | Built | **~80%** |
-| Pipeline end-to-end on a REAL project | Validated in pieces + 1 trivial task; **no full project delivered yet** | **~10%** |
+| Pipeline end-to-end on a REAL project | **Design half validated on a real project** (estreno 2026-06-18: pm→PRD and architect→architecture/contracts/data-model, with human checkpoints); a critical brain-write bug was found + fixed. Code/QA/deploy phases E2E still pending. | **~40%** |
 | Autonomous deploy | Artifacts generated; real deploy blocked by current infra | **~30%** |
 | Grand vision ("Dev OS": many products in parallel, 24/7 autonomous) | Foundations only | **~20%** |
 

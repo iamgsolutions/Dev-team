@@ -23,6 +23,7 @@ class PhaseTask:
     critical: bool = False
     gates: list[str] | None = None
     forbidden: list[str] | None = None
+    expected_files: list[str] | None = None   # concrete files the phase MUST produce
 
 
 # Universal norms every role carries; each role ADDS its own lane on top. Kept in
@@ -61,6 +62,7 @@ def pm_task(project: Project) -> PhaseTask:
             "inventing requirements not in the brief (put doubts in 'Questions for the human')",
             "choosing the tech stack or writing code (that is the Architect's job)",
         ),
+        expected_files=["docs/PRD.md"],
     )
 
 
@@ -100,6 +102,7 @@ def architect_task(project: Project) -> PhaseTask:
             "writing implementation code (you design CONTRACTS, not code)",
             "deviating from docs/STANDARDS.md (it overrides your taste)",
         ),
+        expected_files=["docs/architecture.md", "docs/api-contract.md", "docs/data-model.md"],
     )
 
 
@@ -172,6 +175,7 @@ def qa_task(project: Project) -> PhaseTask:
         ],
         expected_output="./docs/qa-report.md",
         forbidden=_forbidden("modifying application code (you only test and report)"),
+        expected_files=["docs/qa-report.md"],
     )
 
 
@@ -220,6 +224,7 @@ def deploy_task(project: Project) -> PhaseTask:
             "running the actual deployment (you produce + validate artifacts; the operator deploys)",
             "hardcoding secrets into the Dockerfile/compose (use .env.example)",
         ),
+        expected_files=["Dockerfile", "docker-compose.yml", ".env.example", "docs/DEPLOY_RUNBOOK.md"],
     )
 
 

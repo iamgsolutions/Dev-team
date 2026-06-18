@@ -70,6 +70,12 @@ It calls real agents, so run it once the relevant logins are set. Pin a **free**
 OpenRouter model for jcode (`config.DEFAULT_MODELS[BRAIN_JCODE]`) for a fair,
 zero-cost comparison.
 
+> **Before promoting jcode, confirm it WRITES files autonomously.** The estreno
+> (2026-06-18) found that claude/codex needed explicit permission flags or they
+> returned the deliverable as text and wrote nothing. The output-verification
+> guard now catches this, but verify jcode's `run` is autonomous (the benchmark's
+> gate-pass column will show it: an empty worktree fails).
+
 ```powershell
 # raw jcode smoke test (needs jcode's OpenRouter auth configured once):
 $env:JCODE_NO_TELEMETRY = "1"

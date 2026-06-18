@@ -82,6 +82,18 @@ def commit_all(worktree: Path, message: str, model: str | None = None,
     return True
 
 
+def has_changes_vs_base(worktree: Path, base: str = "main") -> bool:
+    """True if the worktree produced changes vs the base branch (i.e. the agent
+    actually wrote something). Used to catch a brain that returns 'ok' but commits
+    nothing - an empty worktree would otherwise sail through gates + audit."""
+    try:
+        committed = _git(worktree, "diff", "--name-only", f"{base}...HEAD").strip()
+        uncommitted = _git(worktree, "status", "--porcelain").strip()
+    except GitError:
+        return True  # can't tell -> don't block (fail open, the gates still run)
+    return bool(committed or uncommitted)
+
+
 def remove(repo: Path, worktree: Path, force: bool = False) -> None:
     args = ["worktree", "remove", str(worktree)]
     if force:

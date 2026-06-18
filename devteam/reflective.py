@@ -21,7 +21,7 @@ from . import config
 
 GOOD = "ok"
 BAD_EVENTS = ("error", "timeout", "rate_limited", "handoff_violated",
-              "gate_failed", "audit_rejected")
+              "gate_failed", "audit_rejected", "output_missing")
 
 
 def _path() -> Path:

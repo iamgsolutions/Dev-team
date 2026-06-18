@@ -16,6 +16,23 @@ lane). This is the single view; the pieces live in code:
 - Never write secrets/keys/tokens into code, commits or logs — use env vars.
 - Stay within the scope of THIS task. Read STATE/NOTES first; update them before finishing.
 
+## Engine-enforced guards (the norms that make it actually work)
+The agent can't talk its way past these — the engine checks them and bounces the
+work back into the self-correction cascade if they fail:
+1. **5-block instruction** — every call is structurally complete or it isn't sent
+   (`instruction.build` raises on a missing mandatory block).
+2. **Brains run autonomously** — claude/codex/opencode are invoked with the flags
+   that let them actually WRITE files (a brain that only *describes* the work is
+   a silent failure; see `brains/*.py`).
+3. **Output verification** — a phase that returns "ok" but did not produce its
+   `expected_files` (or, for code phases, produced no diff at all) is rejected and
+   retried (`pipeline.run_phase`). A brain cannot "succeed" with an empty worktree.
+4. **Memory handoff** — STATE/NOTES must change in CONTENT (not a bare touch) or
+   the task is incomplete (`memory.verify_handoff`).
+5. **Quality gates** — lint/tests/build + an always-on secrets scan before merge.
+6. **Multi-model audit** — a different brain reviews code phases; a `critical`
+   finding forces REJECTED (engine-enforced, not a stated verdict).
+
 ## The roles
 
 ### PM — turns the brief into a PRD

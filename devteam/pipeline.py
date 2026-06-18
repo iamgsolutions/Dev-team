@@ -99,6 +99,25 @@ def run_phase(project: Project) -> PhaseOutcome:
             failure_feedback = f"execution failed ({result.status}): {result.output[:600]}"
             continue  # self-heal: retry (executor's fallback already tried other models)
 
+        # OUTPUT VERIFICATION (estreno 2026-06-18): a brain can return "ok" yet
+        # write NOTHING - an empty worktree would otherwise pass the gates (nothing
+        # to lint/test) and an empty-diff audit (nothing to review), advancing the
+        # project with no deliverable. Verify the phase actually produced its files.
+        if result.worktree:
+            wt = _P(result.worktree)
+            missing = [f for f in (spec.expected_files or []) if not (wt / f).exists()]
+            no_changes = phase in ("backend", "frontend") and not worktree.has_changes_vs_base(wt)
+            if missing or no_changes:
+                problem = (f"missing required file(s): {', '.join(missing)}" if missing
+                           else "you produced no changes at all")
+                reflective.record(result.model, result.brain, "output_missing",
+                                  note=f"{phase}: {problem[:60]}")
+                eventlog.record("output_check", project.name, phase=phase, problem=problem[:120])
+                failure_feedback = (f"you returned success but {problem}. Actually WRITE the "
+                                    "deliverable(s) to disk with real content this time - do not "
+                                    "just describe them in your reply.")
+                continue  # self-heal: the agent writes the files this time
+
         # QUALITY GATES before merge (spec R5: nothing advances without passing gates)
         if result.worktree:
             report = run_gates(_P(result.worktree))

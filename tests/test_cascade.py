@@ -82,3 +82,31 @@ def test_deferred_does_not_burn_retries(isolated_dirs, monkeypatch):
     out = pipeline.run_phase(p)
     assert "deferred" in out.note
     assert p.state == "backend"
+
+
+def test_missing_expected_output_triggers_cascade(isolated_dirs, monkeypatch, tmp_path):
+    # a brain returns ok but writes NO file (the estreno bug) -> must NOT advance
+    p = make_project(isolated_dirs, "pm")            # pm must produce docs/PRD.md
+    wt = tmp_path / "wt"; wt.mkdir()                 # empty worktree: nothing written
+    calls = []
+
+    def fake_execute(**kw):
+        calls.append(kw["task"])
+        return TaskResult("ok", "claude", "sonnet", 0.1, "the PRD (text only)", None, "r", str(wt))
+
+    monkeypatch.setattr(pipeline, "execute_task", fake_execute)
+    out = pipeline.run_phase(p)
+    assert out.advanced_to is None                   # did not advance on empty output
+    assert len(calls) == 3                            # cascade retried, didn't trust ok
+    assert "PRD.md" in calls[-1] and "CORRECTION" in calls[-1]
+
+
+def test_backend_no_changes_triggers_cascade(isolated_dirs, monkeypatch, tmp_path):
+    # backend has no concrete expected_files; an empty diff still must not pass
+    p = make_project(isolated_dirs, "backend")
+    wt = tmp_path / "wt2"; wt.mkdir()
+    monkeypatch.setattr(pipeline, "execute_task",
+                        lambda **kw: TaskResult("ok", "opencode", "m", 0.0, "done (no files)", None, "r", str(wt)))
+    monkeypatch.setattr("devteam.worktree.has_changes_vs_base", lambda *a, **k: False)
+    out = pipeline.run_phase(p)
+    assert out.advanced_to is None

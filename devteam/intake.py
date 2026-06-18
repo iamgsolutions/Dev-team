@@ -24,6 +24,10 @@ AGENTS_MD = """\
 You work inside a 24/7 development team, run by the `devteam`
 engine. These rules ALWAYS apply, in addition to the instruction you receive:
 
+0. DO THE WORK ON DISK. Actually CREATE/EDIT the files your task asks for (the
+   PRD, the code, the contracts, the report...) with your file tools - do NOT
+   just describe them in your reply. A task whose deliverable does not exist on
+   disk is a FAILURE and will be sent straight back to you.
 1. You are STATELESS. Read `.project-memory/STATE.md` and `.project-memory/NOTES.md`
    before acting. The brief is in `BRIEF.md`; the contracts in `docs/`.
 2. BEFORE FINISHING update `.project-memory/STATE.md` (what you did, what is
